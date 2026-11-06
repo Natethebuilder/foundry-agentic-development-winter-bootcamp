@@ -231,6 +231,73 @@ button[title="Back to home"] { top: 36px !important; }
 
 [class*="exportGroup"] { top: 36px !important; }
 
+/* ── Persistent slide navigation (replaces the engine's auto-hiding arrows) ── */
+[class*="_navBtn_"],
+[class*="_keyHint_"] { display: none !important; }
+
+.deck-navbar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(54px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 9100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ice) 28%, transparent);
+  background: color-mix(in srgb, var(--night) 82%, transparent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  max-width: calc(100vw - 24px);
+}
+.deck-navbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.deck-navbar-btn:hover:not(:disabled) { border-color: var(--ice); }
+.deck-navbar-btn:active:not(:disabled) { transform: scale(0.96); }
+.deck-navbar-btn:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+.deck-navbar-btn:disabled { opacity: 0.35; cursor: default; }
+.deck-navbar-next:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ice) 60%, transparent);
+  background: color-mix(in srgb, var(--ice) 18%, var(--card));
+}
+.deck-navbar-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: 0 4px;
+  text-align: center;
+  line-height: 1.25;
+}
+.deck-navbar-count { font-size: 13px; font-weight: 600; color: var(--foreground); white-space: nowrap; }
+.deck-navbar-hint { font-size: 11.5px; color: var(--muted-foreground); white-space: nowrap; }
+.deck-navbar-hint-touch { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .deck-navbar-hint-keys { display: none; }
+  .deck-navbar-hint-touch { display: inline; }
+}
+html[data-export-mode="capture"] .deck-navbar { display: none; }
+
 /* ── Deck on phones: portrait + short landscape ───────────────────────── */
 @media (max-width: 760px), (max-height: 500px) {
   .deck { --content-gutter: 20px; }
@@ -240,15 +307,11 @@ button[title="Back to home"] { top: 36px !important; }
   button[title="Back to home"] { display: none !important; }
   .deck-chrome { top: 34px; left: 12px; gap: 8px; opacity: 0.9; }
   .deck-home-link { padding: 6px 12px; font-size: 12px; }
-  [class*="_navBtn_"] {
-    top: auto !important;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    transform: none !important;
-    width: 44px; height: 44px;
-    opacity: 0.85;
-    background: color-mix(in srgb, var(--card) 82%, transparent);
-  }
-  [class*="_prev_"] { left: 14px !important; }
-  [class*="_next_"] { right: 14px !important; }
+  .deck-navbar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); gap: 6px; padding: 5px; }
+  .deck-navbar-btn { padding: 0 14px; }
   .slide > [class^="_bar_"], .slide-overflow-warn { display: none; }
+}
+
+@media (max-width: 380px) {
+  .deck-navbar-btn:not(.deck-navbar-next) .deck-navbar-label { display: none; }
 }

@@ -36,6 +36,30 @@ function DeckLights() {
   )
 }
 
+function DeckNavBar() {
+  const { go, atStart, atEnd, displayIndex, visibleCount } = useSlides()
+  // Pointer clicks blur the button so the engine's arrow-key handler (which ignores focused buttons) keeps working.
+  const step = (e, dir) => {
+    go(dir)
+    if (e.detail > 0) e.currentTarget.blur()
+  }
+  return (
+    <nav className="deck-navbar" aria-label="Slide navigation">
+      <button type="button" className="deck-navbar-btn" onClick={(e) => step(e, -1)} disabled={atStart} aria-label="Previous slide">
+        <span aria-hidden="true">←</span><span className="deck-navbar-label">Previous</span>
+      </button>
+      <div className="deck-navbar-status">
+        <span className="deck-navbar-count" aria-live="polite">Slide {displayIndex + 1} of {visibleCount}</span>
+        <span className="deck-navbar-hint deck-navbar-hint-keys">Use the buttons or arrow keys</span>
+        <span className="deck-navbar-hint deck-navbar-hint-touch">Tap Next or swipe left</span>
+      </div>
+      <button type="button" className="deck-navbar-btn deck-navbar-next" onClick={(e) => step(e, 1)} disabled={atEnd} aria-label="Next slide">
+        <span className="deck-navbar-label">Next</span><span aria-hidden="true">→</span>
+      </button>
+    </nav>
+  )
+}
+
 export default function DeckView() {
   const { id, slides, theme } = project
   return (
@@ -54,6 +78,7 @@ export default function DeckView() {
           ))}
         </div>
         <FloatingCopilot />
+        <DeckNavBar />
       </SlideProvider>
     </InlineEditProvider>
   )

@@ -375,7 +375,7 @@ export default function Site() {
           ))}
         </nav>
         <div className={s.navActions}>
-          <a className={`${s.btnGhost} ${s.navDeck}`} href={DECK_URL}>▶ Deck</a>
+          <a className={`${s.btnGhost} ${s.navDeck}`} href={DECK_URL} aria-label="Open slide deck">▶ Deck</a>
         </div>
       </header>
 
