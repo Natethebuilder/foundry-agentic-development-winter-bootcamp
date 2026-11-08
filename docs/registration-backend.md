@@ -4,9 +4,8 @@ The public form uses the shared multi-event Power Automate flow and a dedicated 
 
 ## SharePoint target
 
-- Site: `https://microsofteur.sharepoint.com/teams/FoundryAgenticDevelopmentWinterBootcamp`
+- Site: the bootcamp's private SharePoint site
 - List: `Foundry Agentic Development Bootcamp Registrations`
-- List ID: `b2367510-4900-4925-85af-f082b92d2f56`
 - Classification: `Confidential \ Internal-Only`
 - Privacy: private
 - Permissions: inherited from the operations site
@@ -24,6 +23,7 @@ The public form uses the shared multi-event Power Automate flow and a dedicated 
 | `OrganizationAccessStatus` | Choice | `Pending`, `Invitation queued`, `Invitation sent`, `Joined`, or `Issue` |
 | `CloudEnvironmentStatus` | Choice | `Not requested`, `Requested`, `Allocated`, `Ready`, `Waitlisted`, or `Issue` |
 | `Consent` | Yes/No | Explicit data consent |
+| `ConsentVersion` | Single line of text | Optional. Version of the consent wording agreed on the latest submission; see [Consent wording versions](#consent-wording-versions) |
 | `UpdatedAt` | Date and time | Latest submitted timestamp |
 
 `GitHubUserId` and `GitHubUsername` are obsolete and should not exist in the final schema.
@@ -38,7 +38,7 @@ The first accepted response returns an opaque UUID token stored in the browser. 
 SHA256("foundry-agentic-development-winter-bootcamp:" + registrationToken)
 ```
 
-This lets the same browser update the same row without using the email address as an authentication credential.
+This lets the same browser update the same row without using the email address as an authentication credential. An update also needs the submitted email to match the row's `CompanyEmail`. If it doesn't, nothing is saved and the API answers HTTP `409`. Whenever the browser holds a token, the form shows **Not you? Start a new registration**, which deletes the token and clears the form, for example on a shared device.
 
 The API separately derives a downstream-only email dedupe key:
 
@@ -46,7 +46,7 @@ The API separately derives a downstream-only email dedupe key:
 SHA256("foundry-agentic-development-winter-bootcamp:" + normalizedCompanyEmail)
 ```
 
-`RegistrationEmailKey` is never accepted from the browser and is never returned to it. The shared flow stores the key in `Title` and uses it to prevent the same normalized email from creating duplicate rows across browsers while preserving the browser token behavior.
+`RegistrationEmailKey` is never accepted from the browser and is never returned to it. The shared flow stores the key in `Title` and, with `CompanyEmail`, uses it to stop the same normalized email from creating a second row from another browser. That submission saves nothing, and the API answers exactly as it does for a new registration, so the response never reveals whether an email address is registered.
 
 ## API payload
 
@@ -63,11 +63,43 @@ SHA256("foundry-agentic-development-winter-bootcamp:" + normalizedCompanyEmail)
   ],
   "environmentPreference": "local",
   "consent": true,
+  "consentVersion": "2026-10-29",
   "updatedAt": "2026-01-01T12:00:00.000Z"
 }
 ```
 
-The shared flow temporarily accepts `email`, `sessions`, and `environment` as aliases during deployment migration. New clients use only the canonical fields above.
+The flow's trigger schema sets `additionalProperties: false`, so it rejects any other field, including the retired `email`, `sessions` and `environment` aliases. `consentVersion` is optional in the schema (a string of 1-40 characters). The API always sends it from `api/consent.json`, and the browser cannot set it. See [Consent wording versions](#consent-wording-versions).
+
+## API responses
+
+The API waits up to 30 seconds for the flow (`FLOW_TIMEOUT_MS`). The flow can take several seconds just to accept a request, and Static Web Apps ends API requests after 45 seconds.
+
+| Flow answer | API answer to the browser |
+| --- | --- |
+| `202` `{"ok":true,"outcome":"created"}` (new registration saved) | `202` `{"ok":true,"outcome":"received","registrationToken":"…"}` |
+| `202` `{"ok":true,"outcome":"unchanged"}` (email already registered, nothing saved) | The same `received` answer |
+| `202` without an `outcome`, or with one the API doesn't know | The same `received` answer |
+| `202` `{"ok":true,"outcome":"updated"}` | `202` `{"ok":true,"outcome":"updated","registrationToken":"…"}` |
+| `409` `{"ok":false,"outcome":"email-mismatch"}` | `409` with `code` `registration-email-mismatch`, the mismatch message and no token |
+| Any other status, or no answer within 30 seconds | `502` |
+
+For `received` the website shows one neutral message for both new and already registered email addresses: "Thanks, we’ve received your registration. If this email address was already registered, your original registration is unchanged. To change it, contact the Microsoft contact who invited you."
+
+## Consent wording versions
+
+The consent checkbox wording and its version live in `api/consent.json`. The website shows `wording`, and the API sends `version` to the flow as `consentVersion` with every submission.
+
+A version is the date (`YYYY-MM-DD`, UTC) its wording went live on the site. To change the wording, set a new `version` and `wording` in `api/consent.json` and add a row to this table. Never edit a published row. `npm test` fails if this table has no row for the current version with its exact wording.
+
+| Version | Live on the site from (UTC) | File | Wording |
+| --- | --- | --- | --- |
+| `2026-10-29` | 2026-10-29 01:22 | `api/consent.json` (`src/content.js` until versioning) | I consent to Microsoft using my company, company email, session choices and environment preference to administer the bootcamp, send the event invitation, provision access, communicate with me and improve the programme. Registration data is deleted after the administration period. |
+| none | 2026-10-12 19:48 | `src/content.js` | I consent to Microsoft using my company, company email, session choices and environment preference to administer the bootcamp, send the GitHub organization invitation, provision access, communicate with me and improve the programme. Registration data is deleted after the administration period. |
+| none | 2026-10-12 14:05 | `src/content.js` | I consent to Microsoft using my company, company email, session choices and environment preference to administer the bootcamp, send the Golden Ticket organization invitation, provision access, communicate with me and improve the programme. Registration data is deleted after the administration period. |
+| none | 2026-10-11 15:03 | `src/content.js` | I consent to Microsoft using my company, company email, session choices, GitHub.com username and environment preference to administer the bootcamp, provision access, communicate with me and improve the programme. Registration data is deleted after the administration period. |
+| none | 2026-10-11 13:33 | `src/content.js` | I agree that my registration details may be used to administer this bootcamp and its six sessions. |
+
+The flow stores the version in the `ConsentVersion` column on every create and update. Rows last saved before the API started sending `consentVersion` have an empty `ConsentVersion`. Registrants agree to the wording shown on every submission, so the wording for such a row is the latest one live at its `UpdatedAt`. Live times are when the production deploy of the change finished. Earlier wordings stay in the git history of `src/content.js`.
 
 ## Schedule selection contract
 
@@ -110,35 +142,42 @@ The API allowlists exactly 36 combinations and rejects unknown dates, mismatched
 | `registration` | Website and deck | API |
 | --- | --- | --- |
 | `1` | Registration form is open | Validates and forwards submissions to the flow |
-| `2` | Every register entry point says registration will open soon | Returns HTTP `403` without calling the flow |
+| `2` | Every register entry point says registration will open soon | Returns HTTP `403` "Registration will open soon." without calling the flow |
+| `3` | Every register entry point says registration is closed, and the form is not shown | Returns HTTP `403` "Registration is closed." without calling the flow |
+| Any other value | Treated as closed (`3`) | Returns HTTP `403` "Registration is not open." without calling the flow |
+
+Only `1` accepts registrations, so a missing or mistyped value fails closed.
 
 The same file sets `prerequisites` to `"soon"` (prerequisites will be shared soon) or `"microhack"` (MicroHack lab preparation). Commit the change and push to `main` to deploy it.
 
 ## Confirmation email
 
-**Not enabled yet.** The email waits for send access to the bootcamp's shared mailbox. Until then, the website's success message tells registrants that their registration is confirmed and that a formal invitation will follow by email.
+**Not enabled yet.** The email waits for send access to the bootcamp's shared mailbox. Until then, the website tells registrants that their registration was received, that an email address that was already registered keeps its original registration, and that a formal invitation will follow by email.
 
-Once enabled, in state 1 the flow sends each new registrant a confirmation email from the shared mailbox: "Thank you for registering, you will receive a formal invitation with more details closer to the date of the bootcamp." Send it only when a row is created, never on updates or on the existing-email path. Steps and the template are in [registration-confirmation-email.md](registration-confirmation-email.md).
+Once enabled, in state 1 the flow sends each new registrant a confirmation email from the shared mailbox: "Thank you for registering, you will receive a formal invitation with more details closer to the date of the bootcamp." Send it only when a row is created (`created`), never on updates or when the email address is already registered (`unchanged`). Steps and the template are in [registration-confirmation-email.md](registration-confirmation-email.md).
 
 ## Shared flow behavior
 
-The shared flow `Agentic Winter Bootcamps Registration Upsert` must implement this behavior before the hardening change is deployed:
+The shared flow `Agentic Winter Bootcamps Registration Upsert` behaves as follows:
 
 1. Invalid shared secrets return HTTP `401`.
 2. `foundry-agentic-development-winter-bootcamp` routes only to this List.
-3. Missing or unrecognized event IDs return HTTP `400`.
-4. Keep synchronous Response actions so validation and storage failures return the correct HTTP `400`, `401`, or `202` result only after SharePoint processing completes.
+3. Missing or unrecognized event IDs, and requests that don't match the trigger schema, return HTTP `400`. The schema sets `additionalProperties: false`, so alias fields are rejected.
+4. Keep synchronous Response actions so validation and storage failures return the correct HTTP `400`, `401`, `409`, or `202` result only after SharePoint processing completes.
 5. Configure secure inputs and outputs on steps that contain the shared secret or registration payload, restrict flow ownership, and use the shortest practical run-history retention period.
-6. During cutover, `Get_foundry_items` queries with top count `1` for either `Title` equal to `registrationEmailKey` or immutable `CompanyEmail` equal to the normalized submitted email.
-7. The branch updates the first matching row or creates one when absent.
-8. Creates set `Title` to `registrationEmailKey`, store `RegistrationId`, the normalized `CompanyEmail`, and set `OrganizationAccessStatus` to `Pending`.
-9. Creates set `CloudEnvironmentStatus` to `Requested` for cloud or `Not requested` for local.
-10. Updates never change `CompanyEmail`.
-11. A valid same-token, same-email update of a legacy row lazily replaces an email-valued `Title` with `registrationEmailKey`; no manual SharePoint Title backfill is required.
-12. If `Company` changes, reset `OrganizationAccessStatus` to `Pending` when the existing approval or invitation state depends on the previous company.
-13. If `Environment` changes, reset `CloudEnvironmentStatus` to `Requested` for cloud or `Not requested` for local so provisioning reflects the new request.
-14. Otherwise, updates preserve both operational status fields.
-15. Accepted registrations return HTTP `202`.
+6. Look up the row by `RegistrationId` first.
+7. If a row has that `RegistrationId` and its `CompanyEmail` equals the submitted `companyEmail` (ignoring case), update it and return HTTP `202` `{"ok":true,"outcome":"updated"}`.
+8. If a row has that `RegistrationId` but a different `CompanyEmail`, save nothing and return HTTP `409` `{"ok":false,"outcome":"email-mismatch"}`.
+9. If no row has that `RegistrationId`, look for a row whose `Title` equals `registrationEmailKey` or whose `CompanyEmail` equals the submitted email. If one exists, save nothing and return HTTP `202` `{"ok":true,"outcome":"unchanged"}`.
+10. Only when neither the email key nor the email exists, create a row and return HTTP `202` `{"ok":true,"outcome":"created"}`.
+11. Creates set `Title` to `registrationEmailKey`, store `RegistrationId`, the normalized `CompanyEmail`, and set `OrganizationAccessStatus` to `Pending`.
+12. Creates set `CloudEnvironmentStatus` to `Requested` for cloud or `Not requested` for local.
+13. Creates write the submitted `consentVersion` to `ConsentVersion`, or leave it empty if none was sent. Updates write the submitted value, or keep the stored one if none was sent.
+14. Updates never change `CompanyEmail`.
+15. Every update sets `Title` to `registrationEmailKey`, so a valid same-token, same-email update of a legacy row replaces its email-valued `Title`; no manual SharePoint Title backfill is required.
+16. If `Company` changes, reset `OrganizationAccessStatus` to `Pending` when the existing approval or invitation state depends on the previous company.
+17. If `Environment` changes, reset `CloudEnvironmentStatus` to `Requested` for cloud or `Not requested` for local so provisioning reflects the new request.
+18. Otherwise, updates preserve both operational status fields.
 
 The flow writes filterable `SessionSelections` and the temporary `Sessions` text copy.
 
@@ -166,13 +205,16 @@ Registration does not grant any access by itself. Closer to the date, registrant
 
 - The public site and registration API do not require GitHub sign-in.
 - The disabled GitHub OAuth route returns `404`.
-- Registration tests validate email confirmation, valid and invalid date-time-session selections, the retired placeholder values, all 36 valid selections, the state-2 refusal, backend settings, and the canonical payload.
+- Registration tests validate email confirmation, valid and invalid date-time-session selections, the retired placeholder values, all 36 valid selections, the registration states (only `1` accepts; `2`, `3` and unknown values are refused without calling the flow), backend settings, the 30-second flow timeout, and the canonical payload including `consentVersion`.
 - Registration tests verify the normalized deterministic email key, caller override resistance, and preservation of the existing token-derived `RegistrationId`.
+- Registration tests verify the answers: `updated`; one identical `received` answer for `created`, `unchanged`, a missing outcome and an unreadable body; `409` only for the flow's `email-mismatch`; and `502` for every other failure. Another test checks that this document lists the current consent version with its exact wording.
 - Test submissions require explicit approval because they create or update SharePoint data.
 - A create should initialize the two operational status fields.
-- A repeat submission from the same browser should update the same row.
-- A submission from a different browser using the same normalized company email should dedupe to that row without changing `CompanyEmail`.
+- A create or update should store the current consent version in `ConsentVersion`.
+- A repeat submission from the same browser with the same email should update the same row.
+- A repeat submission from the same browser with a different email should save nothing and show the mismatch message.
+- A submission from a different browser using an already registered normalized company email should save nothing, leave the row unchanged and show the same message as a new registration.
 - A valid same-token, same-email update of a legacy row should replace the email-valued `Title` with the email-key hash.
 - Company and environment changes should reset only the operational statuses described above.
 
-This document describes the required flow changes. It does not claim that the email-key dedupe behavior is live until the flow and List schema are updated and verified.
+The repository tests use a mocked flow. Confirm the live flow with approved test submissions whenever it changes.

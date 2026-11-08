@@ -550,6 +550,7 @@
     radial-gradient(260px 160px at 100% 0%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 70%),
     color-mix(in srgb, var(--card) 90%, transparent);
 }
+.registerPromptWide { grid-column: 1 / -1; }
 .soonCard {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

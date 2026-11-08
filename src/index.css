@@ -1,5 +1,14 @@
 @import '@deckio/deck-engine/styles/global.css';
 @import '@deckio/deck-engine/themes/dark.css';
+/* Inter is served from this site, in the weights DECKIO's global.css requests from Google Fonts.
+   vite.config.js drops that remote @import, so no page load contacts Google. */
+@import '@fontsource/inter/300.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/inter/800.css';
+@import '@fontsource/inter/900.css';
 
 /* ── Foundry violet winter palette (overrides DECKIO dark theme) ────────
    Same variable names as the Agentic Data site so the two stay in sync:

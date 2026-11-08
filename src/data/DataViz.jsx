@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AGENT_RUNS, DATES_NOTE, SESSION_DATES, SESSIONS, SHOW_SESSION_OWNERS } from '../content.js'
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion.js'
-import { REGISTRATION_OPEN } from '../siteState.js'
+import { REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from '../siteState.js'
 import d from './Data.module.css'
 
 /* ── Countdown to the first session, styled as the agent's next scheduled run ── */
@@ -170,10 +170,11 @@ export function ScheduleBoard() {
             <strong>Six-session daily agenda</strong>
           </div>
           <p>
-            {REGISTRATION_OPEN
-              ? 'Select any combination of dates and session times during registration.'
-              : 'Once registration opens, you can select any combination of dates and session times.'}
-            {DATES_NOTE && <> {DATES_NOTE}</>}
+            {[
+              REGISTRATION_OPEN && 'Select any combination of dates and session times during registration.',
+              REGISTRATION_OPENS_SOON && 'Once registration opens, you can select any combination of dates and session times.',
+              DATES_NOTE,
+            ].filter(Boolean).join(' ')}
           </p>
         </div>
         <div className={d.agendaGrid}>
