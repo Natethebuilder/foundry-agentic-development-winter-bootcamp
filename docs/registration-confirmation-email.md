@@ -1,8 +1,8 @@
 # Registration confirmation email
 
-**Status: not enabled yet.** The email needs send access to the bootcamp's shared mailbox. Until it is enabled, the website's success message tells registrants that their registration is confirmed and that a formal invitation will follow by email.
+**Status: not enabled yet.** The email needs send access to the bootcamp's shared mailbox. Until it is enabled, the website tells registrants that their registration was received and that a formal invitation will follow by email.
 
-When registration is open (`"registration": 1` in `api/site-state.json`), every new registrant should receive a short confirmation email. In state 2 the API refuses submissions, so no email is sent.
+When registration is open (`"registration": 1` in `api/site-state.json`), every new registrant should receive a short confirmation email. In every other state the API refuses submissions, so no email is sent.
 
 The email is sent by the shared Power Automate flow `Agentic Winter Bootcamps Registration Upsert`, not by the website. The flow already receives the confirmed company email and has a Microsoft 365 connection, so no new secrets, app registrations or mail services are needed, and the API-to-flow contract does not change.
 
@@ -15,7 +15,7 @@ Ask the owner of the bootcamp mailbox, or an Exchange admin, to grant you **Send
 In the Foundry branch of the flow (the **Route foundry** condition, where `eventId` equals `foundry-agentic-development-winter-bootcamp`):
 
 1. Directly under **Foundry response**, add a **Condition** and rename it `New foundry registration`. Because it comes after the response, an email failure can never change the `202` the API receives.
-2. Set the condition to the expression `actions('Create_foundry_registration')?['status']` **is equal to** `Succeeded`. This is only true when a new row was created, because the create step is skipped on the update path. If the create step has a different name, use that name with spaces replaced by underscores.
+2. Set the condition to the expression `actions('Create_foundry_registration')?['status']` **is equal to** `Succeeded`. This is only true when a new row was created, because the create step is skipped on every other path (`updated`, `unchanged` and `email-mismatch`). If the create step has a different name, use that name with spaces replaced by underscores.
 3. In the condition's **True** branch, add **Office 365 Outlook → Send an email from a shared mailbox (V2)**. Set **Original Mailbox Address** to the bootcamp mailbox.
 4. Set **To** to the `companyEmail` value from the trigger body (expression `triggerBody()?['companyEmail']`).
 5. Set **Subject** and **Body** from the template below. Switch the body editor to code view (`</>`) before pasting the HTML.
@@ -23,10 +23,10 @@ In the Foundry branch of the flow (the **Route foundry** condition, where `event
 7. In the email step's **Settings**, turn on **Secure inputs** and **Secure outputs**, like the other steps that handle registration data.
 8. Save. Then reload the designer page and check that `New foundry registration` and the email step are still under **Foundry response** before you test.
 
-Do **not** add the email to the update path or the "existing event/email" path:
+Do **not** add the email to the update path, the email-mismatch path or the "email already registered" (`unchanged`) path:
 
 - The company email is not verified (it is typed twice, not confirmed by link). Sending only when a row is created means each address can receive at most one confirmation per event, so the form cannot be used to repeatedly email someone else.
-- The existing-email path deliberately returns the same generic `202` as a new registration. Sending an email there would reveal that the address was already registered.
+- On the `unchanged` path nothing is saved, and the API deliberately gives the browser the same `received` answer as for a new registration. Sending an email there would reveal that the address was already registered.
 
 ## Template
 
@@ -71,6 +71,7 @@ Test only with explicit approval, because each test creates a SharePoint row and
 
 1. Submit a new registration with a mailbox you control: one row is created and one email arrives from the shared mailbox.
 2. Submit again from the same browser with different sessions: the row updates and **no** second email arrives.
-3. Submit the same email from another browser: the generic `202` is returned and **no** email arrives.
-4. Check the flow run history: the email step's inputs and outputs are redacted.
-5. Switch `api/site-state.json` to `"registration": 2` in a test deployment: the API returns `403` and the flow is never called.
+3. Submit the same email from another browser: the site shows the same "received" message as for a new registration, nothing is saved and **no** email arrives.
+4. Submit a different email from the first browser: the API returns `409`, nothing is saved and **no** email arrives.
+5. Check the flow run history: the email step's inputs and outputs are redacted.
+6. Switch `api/site-state.json` to `"registration": 2` or `3` in a test deployment: the API returns `403` and the flow is never called.

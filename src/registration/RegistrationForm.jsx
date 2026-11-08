@@ -12,7 +12,22 @@ function saveRegistrationToken(token) {
   try { localStorage.setItem(TOKEN_KEY, token) } catch { /* ignore */ }
 }
 
+function removeRegistrationToken() {
+  try { localStorage.removeItem(TOKEN_KEY) } catch { /* ignore */ }
+}
+
+// "Not you? Start a new registration" forgets this browser's registration token and remounts the
+// form, so nothing the previous person entered stays on screen, for example on a shared device.
 export default function RegistrationForm() {
+  const [generation, setGeneration] = useState(0)
+  const startOver = () => {
+    removeRegistrationToken()
+    setGeneration((current) => current + 1)
+  }
+  return <RegistrationFields key={generation} onStartOver={startOver} focusOnMount={generation > 0} />
+}
+
+function RegistrationFields({ onStartOver, focusOnMount }) {
   const [slots, setSlots] = useState([])
   const [activeDate, setActiveDate] = useState(SESSION_DATES[0].id)
   const [company, setCompany] = useState('')
@@ -29,6 +44,7 @@ export default function RegistrationForm() {
   const emailsMatch = Boolean(normalizedEmail) && normalizedEmail === normalizedConfirmation
   const emailMismatch = Boolean(emailConfirmation) && !emailsMatch
   const valid = slots.length > 0 && company.trim() && emailsMatch && consent
+  const saved = status === 'received' || status === 'updated'
   const selectedDateCount = new Set(slots.map((slot) => slot.split('|')[0])).size
 
   const toggleSlot = (id) => setSlots((current) => (
@@ -44,7 +60,7 @@ export default function RegistrationForm() {
       let result
       if (import.meta.env.DEV) {
         await new Promise((resolve) => setTimeout(resolve, 500))
-        result = { registrationToken: registrationToken || crypto.randomUUID() }
+        result = { ok: true, outcome: registrationToken ? 'updated' : 'received', registrationToken: registrationToken || crypto.randomUUID() }
       } else {
         const response = await fetch('/api/register', {
           method: 'POST',
@@ -59,15 +75,17 @@ export default function RegistrationForm() {
             consent,
           }),
         })
-        result = await response.json()
+        result = await response.json().catch(() => ({}))
         if (!response.ok) throw new Error(result.error || 'Registration could not be saved')
       }
       if (result.registrationToken) {
         saveRegistrationToken(result.registrationToken)
         setRegistrationToken(result.registrationToken)
       }
-      setStatus('success')
-      setMessage(REGISTRATION.success)
+      // "received" covers both a new registration and an email address that was already registered.
+      const updated = result.outcome === 'updated'
+      setStatus(updated ? 'updated' : 'received')
+      setMessage(updated ? REGISTRATION.updated : REGISTRATION.received)
     } catch (error) {
       setStatus('error')
       setMessage(error.message)
@@ -87,7 +105,7 @@ export default function RegistrationForm() {
       <div className={s.fields}>
         <label className={s.companyField}>
           <span>Company or organisation</span>
-          <input required autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} />
+          <input required autoComplete="organization" autoFocus={focusOnMount} value={company} onChange={(e) => setCompany(e.target.value)} />
         </label>
         <label>
           <span>Company email address</span>
@@ -165,12 +183,17 @@ export default function RegistrationForm() {
       </label>
 
       <div className={s.submitRow}>
-        <button type="submit" disabled={!valid || status === 'submitting' || status === 'success'}>
-          {status === 'submitting' ? 'Saving…' : status === 'success' ? 'Registered ✓' : 'Submit registration'}
+        <button type="submit" disabled={!valid || status === 'submitting' || saved}>
+          {status === 'submitting' ? 'Saving…' : status === 'updated' ? 'Updated ✓' : status === 'received' ? 'Received ✓' : 'Submit registration'}
         </button>
         <small>No sign-in is required. Your formal invitation is sent to your confirmed company email.</small>
       </div>
       {message && <p className={`${s.message} ${status === 'error' ? s.error : ''}`} role="status">{message}</p>}
+      {registrationToken && (
+        <button type="button" className={s.startOver} disabled={status === 'submitting'} onClick={onStartOver}>
+          {REGISTRATION.startOver}
+        </button>
+      )}
     </form>
   )
 }

@@ -8,9 +8,9 @@ import RegistrationForm from '../registration/RegistrationForm.jsx'
 import SpeakerAvatar from '../speakers/SpeakerAvatar.jsx'
 import {
   BOOTCAMP, DATES_NOTE, FAQ, LINEUP, MICROHACK_ACCESS, PERSONAS, PILLARS, PREP, PREREQUISITES, REGISTRATION,
-  REGISTRATION_SOON, SESSIONS, SHOW_SESSION_OWNERS, sessionOwner,
+  REGISTRATION_NOTICE, SESSIONS, SHOW_SESSION_OWNERS, sessionOwner,
 } from '../content.js'
-import { PREREQUISITES_STATE, REGISTRATION_OPEN } from '../siteState.js'
+import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from '../siteState.js'
 import s from './Site.module.css'
 
 const NAV = [
@@ -328,13 +328,14 @@ function PrepChecklist() {
   )
 }
 
-// Stands in for a section's interactive content while that part of the programme is not open yet.
-function SoonPanel({ mark, label, heading, body, children }) {
+// Stands in for a section's interactive content while that part of the programme is not open yet,
+// or no longer open. The pulsing dot marks something that is still to come.
+function SoonPanel({ mark, label, heading, body, pulse = true, children }) {
   return (
     <div className={s.soonPanel} role="status">
       <span className={s.soonMark} aria-hidden="true">{mark}</span>
       <div>
-        <small><i aria-hidden="true" />{label}</small>
+        <small>{pulse && <i aria-hidden="true" />}{label}</small>
         <h3>{heading}</h3>
         <p>{body}</p>
       </div>
@@ -394,7 +395,7 @@ export default function Site() {
               <button type="button" className={s.btnGhost} onClick={() => go('why')}>More info</button>
               <button type="button" className={s.btnGhost} onClick={() => go('lineup')}>See the lineup</button>
               <button type="button" className={s.btnPrimary} onClick={() => go('join')}>
-                {REGISTRATION_OPEN ? 'Register now' : REGISTRATION_SOON.cta}
+                {REGISTRATION_OPEN ? 'Register now' : REGISTRATION_NOTICE.cta}
               </button>
             </div>
             <Countdown
@@ -453,7 +454,12 @@ export default function Site() {
           idx="03"
           eyebrow="Schedule"
           title="Six dates. The same complete programme."
-          subtitle={`All six sessions run on every date. ${REGISTRATION_OPEN ? 'When you register' : 'Once registration opens'}, pick as many sessions as you like, on as many dates as you like.${DATES_NOTE ? ` ${DATES_NOTE}` : ''}`}
+          subtitle={[
+            'All six sessions run on every date.',
+            REGISTRATION_OPEN && 'When you register, pick as many sessions as you like, on as many dates as you like.',
+            REGISTRATION_OPENS_SOON && 'Once registration opens, pick as many sessions as you like, on as many dates as you like.',
+            DATES_NOTE,
+          ].filter(Boolean).join(' ')}
         >
           <ScheduleBoard />
         </Section>
@@ -501,16 +507,17 @@ export default function Site() {
         <Section
           id="join"
           idx="05"
-          eyebrow={REGISTRATION_OPEN ? REGISTRATION.eyebrow : REGISTRATION_SOON.eyebrow}
-          title={REGISTRATION_OPEN ? REGISTRATION.title : REGISTRATION_SOON.title}
-          subtitle={REGISTRATION_OPEN ? REGISTRATION.subtitle : REGISTRATION_SOON.subtitle}
+          eyebrow={REGISTRATION_OPEN ? REGISTRATION.eyebrow : REGISTRATION_NOTICE.eyebrow}
+          title={REGISTRATION_OPEN ? REGISTRATION.title : REGISTRATION_NOTICE.title}
+          subtitle={REGISTRATION_OPEN ? REGISTRATION.subtitle : REGISTRATION_NOTICE.subtitle}
         >
           {REGISTRATION_OPEN ? <RegistrationForm /> : (
             <SoonPanel
-              mark="📅"
-              label={REGISTRATION_SOON.badge}
-              heading={REGISTRATION_SOON.heading}
-              body={REGISTRATION_SOON.body}
+              mark={REGISTRATION_NOTICE.mark}
+              label={REGISTRATION_NOTICE.badge}
+              heading={REGISTRATION_NOTICE.heading}
+              body={REGISTRATION_NOTICE.body}
+              pulse={REGISTRATION_OPENS_SOON}
             >
               <button type="button" className={s.btnGhost} onClick={() => go('lineup')}>See the lineup</button>
               <button type="button" className={s.btnGhost} onClick={() => go('schedule')}>View the schedule</button>

@@ -1,7 +1,8 @@
 // Shared public content for the landing site and the deck.
 // Sessions and owners follow the Foundry Bootcamp deck (v7, slides 8, 11 and 18–23). Session times
 // match the Agentic Data Engineering Winter Bootcamp. The six Friday dates are preliminary.
-import { PREREQUISITES_STATE, REGISTRATION_OPEN } from './siteState.js'
+import CONSENT from '../api/consent.json'
+import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from './siteState.js'
 
 export const BOOTCAMP = {
   name: 'Foundry Agentic Development Winter Bootcamp',
@@ -439,13 +440,20 @@ export const REGISTRATION = {
       desc: 'Places are limited. Selecting this records your request but does not guarantee a place.',
     },
   ],
-  consent:
-    'I consent to Microsoft using my company, company email, session choices and environment preference to administer the bootcamp, send the event invitation, provision access, communicate with me and improve the programme. Registration data is deleted after the administration period.',
-  success: 'Thank you for registering! Your registration has been confirmed. You will receive a formal invitation by email closer to the date of the bootcamp.',
+  // The wording and its version live in api/consent.json, so the API can record which version each
+  // registrant agreed to. When the wording changes, set the version to the date it goes live and add
+  // it to "Consent wording versions" in docs/registration-backend.md.
+  consent: CONSENT.wording,
+  // The API answers a new registration and an already registered email address the same way, so
+  // "received" must be true for both.
+  received: 'Thanks, we’ve received your registration. If this email address was already registered, your original registration is unchanged. To change it, contact the Microsoft contact who invited you. You will receive a formal invitation by email closer to the date of the bootcamp.',
+  updated: 'Thanks, your registration has been updated. You will receive a formal invitation by email closer to the date of the bootcamp.',
+  startOver: 'Not you? Start a new registration',
 }
 
 // Shown everywhere registration appears while registration is 2 in api/site-state.json.
 export const REGISTRATION_SOON = {
+  mark: '📅',
   eyebrow: 'Registration',
   title: 'Registration will open soon.',
   subtitle: 'We are putting the finishing touches on the programme. Check back soon to choose your dates and sessions.',
@@ -454,6 +462,22 @@ export const REGISTRATION_SOON = {
   body: 'All six sessions run on every date, so once registration opens you can pick as many sessions as you like, on as many dates as you like.',
   cta: 'Registration opens soon',
 }
+
+// Shown everywhere registration appears while registration is 3 in api/site-state.json, or any value
+// that is not a known state.
+export const REGISTRATION_CLOSED = {
+  mark: '🔒',
+  eyebrow: 'Registration',
+  title: 'Registration is closed.',
+  subtitle: 'This bootcamp is no longer accepting registrations.',
+  badge: 'Closed',
+  heading: 'Registration is closed',
+  body: 'If you have a question about an existing registration, ask the Microsoft contact who invited you.',
+  cta: 'Registration closed',
+}
+
+// What every register entry point shows while registration is not open.
+export const REGISTRATION_NOTICE = REGISTRATION_OPENS_SOON ? REGISTRATION_SOON : REGISTRATION_CLOSED
 
 export const FAQ = [
   {
@@ -490,6 +514,8 @@ export const FAQ = [
     q: 'How do I register?',
     a: REGISTRATION_OPEN
       ? 'Provide and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
-      : 'Registration will open soon. When it does, you confirm your company email, choose the dates and session times you plan to attend, and select your development environment.',
+      : REGISTRATION_OPENS_SOON
+        ? 'Registration will open soon. When it does, you confirm your company email, choose the dates and session times you plan to attend, and select your development environment.'
+        : `Registration is closed. ${REGISTRATION_CLOSED.body}`,
   },
 ]

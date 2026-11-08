@@ -1,5 +1,6 @@
 const { createHash, randomUUID } = require('node:crypto')
 const siteState = require('../site-state.json')
+const CONSENT = require('../consent.json')
 
 const EVENT_ID = 'foundry-agentic-development-winter-bootcamp'
 const SESSION_DATES = ['2026-12-04', '2026-12-11', '2026-12-18', '2027-01-08', '2027-01-15', '2027-01-22']
@@ -16,6 +17,10 @@ const SESSION_SELECTIONS = new Set(SESSION_DATES.flatMap((date) => (
 )))
 const ENVIRONMENTS = new Set(['local', 'cloud'])
 const REGISTRATION_TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+// Power Automate can take several seconds just to accept a request, so wait well beyond its
+// usual 1-3 s while staying under the 45 s Static Web Apps API request limit.
+const FLOW_TIMEOUT_MS = 30_000
+const EMAIL_MISMATCH = 'This email address doesn’t match the registration saved in this browser. Check the address, or choose "Not you? Start a new registration".'
 
 function response(status, body) {
   return {
@@ -28,10 +33,30 @@ function response(status, body) {
   }
 }
 
+// Only state 1 in api/site-state.json accepts registrations. State 2 (opening soon), state 3
+// (closed) and any unknown value refuse them without calling the flow.
+function registrationRefusal(state) {
+  if (state === 1) return null
+  if (state === 2) return 'Registration will open soon.'
+  if (state === 3) return 'Registration is closed.'
+  return 'Registration is not open.'
+}
+
+// The flow answers with JSON such as {"ok":true,"outcome":"created"}. A body that cannot be read
+// has no outcome.
+async function readFlowResult(flowResponse) {
+  try {
+    const result = JSON.parse(await flowResponse.text())
+    return result && typeof result === 'object' ? result : {}
+  } catch {
+    return {}
+  }
+}
+
 module.exports = async function register(context, req) {
-  // State 2 in api/site-state.json pauses registration without removing the working flow.
-  if (siteState.registration === 2) {
-    context.res = response(403, { error: 'Registration will open soon.' })
+  const refusal = registrationRefusal(siteState.registration)
+  if (refusal) {
+    context.res = response(403, { error: refusal })
     return
   }
 
@@ -100,6 +125,7 @@ module.exports = async function register(context, req) {
     sessionSelections: sessions,
     environmentPreference: environment,
     consent: true,
+    consentVersion: CONSENT.version,
     updatedAt: new Date().toISOString(),
   }
 
@@ -112,17 +138,27 @@ module.exports = async function register(context, req) {
         'x-registration-secret': flowSecret,
       },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(FLOW_TIMEOUT_MS),
     })
   } catch {
     context.res = response(502, { error: 'Registration storage is temporarily unavailable.' })
     return
   }
 
+  const flowResult = await readFlowResult(flowResponse)
+  // The browser's token belongs to a registration with a different email address, for example on
+  // a shared device. Nothing was saved, and the token is not returned.
+  if (flowResponse.status === 409 && flowResult.outcome === 'email-mismatch') {
+    context.res = response(409, { error: EMAIL_MISMATCH, code: 'registration-email-mismatch' })
+    return
+  }
   if (!flowResponse.ok) {
     context.res = response(502, { error: 'Registration storage rejected the request.' })
     return
   }
 
-  context.res = response(202, { ok: true, registrationToken })
+  // A new registration ("created") and an email address that is already registered ("unchanged")
+  // get the same answer, so the response never shows whether an address is registered.
+  const outcome = flowResult.outcome === 'updated' ? 'updated' : 'received'
+  context.res = response(202, { ok: true, outcome, registrationToken })
 }

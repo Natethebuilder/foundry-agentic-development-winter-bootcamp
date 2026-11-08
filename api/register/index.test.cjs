@@ -1,11 +1,14 @@
 const assert = require('node:assert/strict')
 const { createHash } = require('node:crypto')
+const { readFileSync } = require('node:fs')
+const path = require('node:path')
 const test = require('node:test')
 const register = require('./index.js')
 const siteState = require('../site-state.json')
+const CONSENT = require('../consent.json')
 
 // Run against open registration whatever api/site-state.json is committed as, so switching the live
-// site to state 2 never blocks a deploy. The state 2 test switches it explicitly.
+// site to state 2 or 3 never blocks a deploy. The state test switches it explicitly.
 siteState.registration = 1
 
 const registrationToken = '123e4567-e89b-42d3-a456-426614174000'
@@ -41,6 +44,23 @@ function validBody() {
 function configuredEnvironment() {
   process.env.REGISTRATION_FLOW_URL = 'https://flow.example.test/register'
   process.env.REGISTRATION_FLOW_SHARED_SECRET = 'test-only-secret'
+}
+
+// A flow response with a status code and a JSON (or raw text) body.
+function flowAnswer(status, body) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
+  }
+}
+
+async function registerWithFlowAnswer(answer) {
+  configuredEnvironment()
+  global.fetch = async () => answer
+  const context = {}
+  await register(context, request(validBody()))
+  return context.res
 }
 
 test('rejects mismatched email confirmation', async () => {
@@ -106,20 +126,38 @@ test('accepts every session on every date', async () => {
   assert.equal(received.sessionSelections.length, 36)
 })
 
-test('refuses registrations while registration is paused (state 2)', async () => {
+test('accepts registrations only in state 1', async () => {
   configuredEnvironment()
-  let called = false
+  let calls = 0
   global.fetch = async () => {
-    called = true
-    return { ok: true }
+    calls += 1
+    return flowAnswer(202, { ok: true, outcome: 'created' })
   }
+  const refusals = [
+    [2, 'Registration will open soon.'],
+    [3, 'Registration is closed.'],
+    [0, 'Registration is not open.'],
+    [4, 'Registration is not open.'],
+    ['1', 'Registration is not open.'],
+    [null, 'Registration is not open.'],
+    [undefined, 'Registration is not open.'],
+  ]
   const original = siteState.registration
-  siteState.registration = 2
   try {
+    for (const [state, error] of refusals) {
+      siteState.registration = state
+      const context = {}
+      await register(context, request(validBody()))
+      assert.equal(context.res.status, 403, `state ${state}`)
+      assert.deepEqual(context.res.body, { error }, `state ${state}`)
+    }
+    assert.equal(calls, 0)
+
+    siteState.registration = 1
     const context = {}
     await register(context, request(validBody()))
-    assert.equal(context.res.status, 403)
-    assert.equal(called, false)
+    assert.equal(context.res.status, 202)
+    assert.equal(calls, 1)
   } finally {
     siteState.registration = original
   }
@@ -218,4 +256,97 @@ test('ignores caller attempts to override server-derived registration identifier
   assert.equal(context.res.body.registrationToken, registrationToken)
   assert.equal('registrationId' in context.res.body, false)
   assert.equal('registrationEmailKey' in context.res.body, false)
+})
+
+test('gives a slow flow time to answer within the 45 s Static Web Apps limit', async () => {
+  configuredEnvironment()
+  const timeout = AbortSignal.timeout
+  let timeoutMs
+  AbortSignal.timeout = (ms) => {
+    timeoutMs = ms
+    return timeout.call(AbortSignal, ms)
+  }
+  global.fetch = async () => ({ ok: true })
+
+  const context = {}
+  try {
+    await register(context, request(validBody()))
+  } finally {
+    AbortSignal.timeout = timeout
+  }
+
+  assert.equal(context.res.status, 202)
+  assert.ok(timeoutMs >= 20_000)
+  assert.ok(timeoutMs < 45_000)
+})
+
+test('reports an updated registration', async () => {
+  const res = await registerWithFlowAnswer(flowAnswer(202, { ok: true, outcome: 'updated' }))
+  assert.equal(res.status, 202)
+  assert.deepEqual(res.body, { ok: true, outcome: 'updated', registrationToken })
+})
+
+test('answers a new registration and an already registered email address identically', async () => {
+  const received = { status: 202, body: { ok: true, outcome: 'received', registrationToken } }
+  const answers = {
+    created: flowAnswer(202, { ok: true, outcome: 'created' }),
+    unchanged: flowAnswer(202, { ok: true, outcome: 'unchanged' }),
+    'no outcome': flowAnswer(202, { ok: true }),
+    'an unknown outcome': flowAnswer(202, { ok: true, outcome: 'something-new' }),
+    'an empty body': flowAnswer(202, ''),
+    'a body that is not JSON': flowAnswer(202, 'Accepted'),
+    'a body that cannot be read': { ok: true, status: 202 },
+  }
+  for (const [name, answer] of Object.entries(answers)) {
+    const res = await registerWithFlowAnswer(answer)
+    assert.deepEqual({ status: res.status, body: res.body }, received, name)
+  }
+})
+
+test('refuses a saved registration whose email address differs, without returning the token', async () => {
+  const res = await registerWithFlowAnswer(flowAnswer(409, { ok: false, outcome: 'email-mismatch' }))
+  assert.equal(res.status, 409)
+  assert.deepEqual(res.body, {
+    error: 'This email address doesn\u2019t match the registration saved in this browser. Check the address, or choose "Not you? Start a new registration".',
+    code: 'registration-email-mismatch',
+  })
+})
+
+test('reports every other flow failure as a storage error', async () => {
+  const failures = [
+    flowAnswer(409, { ok: false }),
+    flowAnswer(409, 'Conflict'),
+    flowAnswer(400, { error: 'schema' }),
+    flowAnswer(401, ''),
+    flowAnswer(500, { ok: false, outcome: 'email-mismatch' }),
+    flowAnswer(502, 'Bad Gateway'),
+  ]
+  for (const answer of failures) {
+    const res = await registerWithFlowAnswer(answer)
+    assert.equal(res.status, 502, `flow status ${answer.status}`)
+    assert.deepEqual(res.body, { error: 'Registration storage rejected the request.' })
+  }
+})
+
+test('sends the current consent wording version, never one supplied by the caller', async () => {
+  configuredEnvironment()
+  let received
+  global.fetch = async (url, options) => {
+    received = JSON.parse(options.body)
+    return flowAnswer(202, { ok: true, outcome: 'created' })
+  }
+
+  const context = {}
+  await register(context, request({ ...validBody(), consentVersion: 'caller-version' }))
+
+  assert.equal(context.res.status, 202)
+  assert.match(CONSENT.version, /^\d{4}-\d{2}-\d{2}$/)
+  assert.equal(received.consentVersion, CONSENT.version)
+})
+
+test('documents the current consent wording version', () => {
+  const docs = readFileSync(path.join(__dirname, '../../docs/registration-backend.md'), 'utf8')
+  const row = docs.split('\n').find((line) => line.startsWith(`| \`${CONSENT.version}\` |`))
+  assert.ok(row, `docs/registration-backend.md has no row for consent version ${CONSENT.version}`)
+  assert.ok(row.includes(CONSENT.wording), 'the documented wording must match api/consent.json exactly')
 })

@@ -7,9 +7,9 @@ import PillarMark from '../agentic/PillarMark.jsx'
 import { ChristmasLights, Logos, Mascot } from '../winter/Decor.jsx'
 import {
   BOOTCAMP, DATES_NOTE, INVITATION, MICROHACK_ACCESS, PERSONAS, PILLARS, PREP, PREREQUISITES, REGISTER_STEPS,
-  REGISTRATION_SOON, SESSION_DATES, SESSIONS, SHOW_SESSION_OWNERS, TEAM, sessionOwner,
+  REGISTRATION_NOTICE, SESSION_DATES, SESSIONS, SHOW_SESSION_OWNERS, TEAM, sessionOwner,
 } from '../content.js'
-import { PREREQUISITES_STATE, REGISTRATION_OPEN } from '../siteState.js'
+import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from '../siteState.js'
 import s from './Slides.module.css'
 
 const LIGHTS = 34
@@ -140,7 +140,9 @@ export function WinterTitleSlide({ index }) {
                 Register now <span aria-hidden="true">→</span>
               </RegistrationButton>
             ) : (
-              <span className={s.heroSoon} role="status"><i aria-hidden="true" />{REGISTRATION_SOON.cta}</span>
+              <span className={s.heroSoon} role="status">
+                {REGISTRATION_OPENS_SOON && <i aria-hidden="true" />}{REGISTRATION_NOTICE.cta}
+              </span>
             )}
             <Editable as="span" id="title.ctaNote" className={s.heroCtaNote}>Free · Six one-hour sessions</Editable>
           </div>
@@ -256,7 +258,11 @@ export function TimetableSlide({ index }) {
         id="timetable"
         eyebrow="Programme schedule"
         title="Six dates. The same six-session day."
-        subtitle={`Every date runs all six sessions. ${REGISTRATION_OPEN ? 'Pick' : 'Once registration opens, pick'} as many as you like, on as many dates as you like.`}
+        subtitle={[
+          'Every date runs all six sessions.',
+          REGISTRATION_OPEN && 'Pick as many as you like, on as many dates as you like.',
+          REGISTRATION_OPENS_SOON && 'Once registration opens, pick as many as you like, on as many dates as you like.',
+        ].filter(Boolean).join(' ')}
       />
       <div className={s.scheduleDates}>
         {SESSION_DATES.map((date) => (
@@ -460,34 +466,42 @@ export function RegisterSlide({ index }) {
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
   }, [])
 
+  const closed = !REGISTRATION_OPEN && !REGISTRATION_OPENS_SOON
+
   return (
     <Frame index={index} id="register" orbs={['orbIce', 'orbHolly']}>
       <Header
         id="register"
         eyebrow="Ready to join?"
-        title={REGISTRATION_OPEN ? 'How to register' : REGISTRATION_SOON.title}
+        title={REGISTRATION_OPEN ? 'How to register' : REGISTRATION_NOTICE.title}
         subtitle={REGISTRATION_OPEN
           ? 'Registration is open. Confirm your company email; no sign-in is required.'
-          : 'When registration opens, it takes about two minutes:'}
+          : REGISTRATION_OPENS_SOON ? 'When registration opens, it takes about two minutes:' : REGISTRATION_NOTICE.subtitle}
       />
       <div className={s.registerSlideGrid}>
-        <div className={s.points}>
-          {REGISTER_STEPS.map((text, i) => (
-            <div key={i} className={s.point}>
-              <span className={s.stepNum}>{i + 1}</span>
-              <Editable as="span" id={`register.step${i + 1}`}>{text}</Editable>
-            </div>
-          ))}
-        </div>
-        <div className={`${s.registerPrompt} ${REGISTRATION_OPEN ? '' : s.registerPromptSoon}`}>
-          <span className={s.registerPromptMark} aria-hidden="true">{REGISTRATION_OPEN ? INVITATION.mark : '📅'}</span>
+        {!closed && (
+          <div className={s.points}>
+            {REGISTER_STEPS.map((text, i) => (
+              <div key={i} className={s.point}>
+                <span className={s.stepNum}>{i + 1}</span>
+                <Editable as="span" id={`register.step${i + 1}`}>{text}</Editable>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className={[s.registerPrompt, !REGISTRATION_OPEN && s.registerPromptSoon, closed && s.registerPromptWide].filter(Boolean).join(' ')}>
+          <span className={s.registerPromptMark} aria-hidden="true">{REGISTRATION_OPEN ? INVITATION.mark : REGISTRATION_NOTICE.mark}</span>
           <div>
-            <strong>{REGISTRATION_OPEN ? INVITATION.eyebrow : REGISTRATION_SOON.heading}</strong>
-            <p>{REGISTRATION_OPEN ? INVITATION.description : REGISTRATION_SOON.body}</p>
+            <strong>{REGISTRATION_OPEN ? INVITATION.eyebrow : REGISTRATION_NOTICE.heading}</strong>
+            <p>{REGISTRATION_OPEN ? INVITATION.description : REGISTRATION_NOTICE.body}</p>
           </div>
           {REGISTRATION_OPEN
             ? <RegistrationButton initiallyOpen={openOnLoad}>Open registration</RegistrationButton>
-            : <span className={s.registerSoonBadge} role="status"><i aria-hidden="true" />{REGISTRATION_SOON.badge}</span>}
+            : (
+              <span className={s.registerSoonBadge} role="status">
+                {REGISTRATION_OPENS_SOON && <i aria-hidden="true" />}{REGISTRATION_NOTICE.badge}
+              </span>
+            )}
         </div>
       </div>
     </Frame>
