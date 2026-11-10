@@ -8,7 +8,7 @@ import PillarMark from '../agentic/PillarMark.jsx'
 import { ChristmasLights, Logos, Mascot } from '../winter/Decor.jsx'
 import {
   BOOTCAMP, DATES_NOTE, INVITATION, MICROHACK_ACCESS, PERSONAS, PILLARS, PREP, PREREQUISITES, REGISTER_STEPS,
-  REGISTRATION_FORM, REGISTRATION_NOTICE, SESSION_DATES, SESSIONS, SHOW_SESSION_OWNERS, TEAM, sessionOwner,
+  REGISTRATION_NOTICE, SESSION_DATES, SESSIONS, SHOW_SESSION_OWNERS, TEAM, sessionOwner,
 } from '../content.js'
 import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON, REGISTRATION_VIA_FORM } from '../siteState.js'
 import s from './Slides.module.css'
@@ -261,9 +261,7 @@ export function TimetableSlide({ index }) {
         title="Six dates. The same six-session day."
         subtitle={[
           'Every date runs all six sessions.',
-          REGISTRATION_VIA_FORM
-            ? REGISTRATION_FORM.sessionChoice
-            : REGISTRATION_OPEN && 'Pick as many as you like, on as many dates as you like.',
+          REGISTRATION_OPEN && 'Pick as many as you like, on as many dates as you like.',
           REGISTRATION_OPENS_SOON && 'Once registration opens, pick as many as you like, on as many dates as you like.',
         ].filter(Boolean).join(' ')}
       />

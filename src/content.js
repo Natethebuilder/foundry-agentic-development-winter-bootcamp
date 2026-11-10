@@ -418,9 +418,7 @@ export const MICROHACK_RESOURCES = [
 
 export const REGISTER_STEPS = [
   'Enter and confirm your company email address',
-  REGISTRATION_VIA_FORM
-    ? 'Choose a date for each session you want to attend, and your development environment'
-    : 'Choose the dates, session times and development environment you need',
+  'Choose the dates, session times and development environment you need',
   'Receive a formal invitation with more details closer to the date',
 ]
 
@@ -455,20 +453,18 @@ export const REGISTRATION = {
 
 // Shown in place of the on-site form while registration is 4 in api/site-state.json, when
 // registrations go to this bootcamp's Microsoft Form. Nothing loads from Microsoft Forms until the
-// visitor starts. The form takes one date per session (or None), unlike the on-site form, which takes
-// any combination of dates and sessions. docs/registration-form/README.md records its questions.
+// visitor starts. Like the on-site form, the form takes any combination of dates and sessions, so the
+// schedule copy is shared. docs/registration-form/README.md records its questions.
 export const REGISTRATION_FORM = {
-  subtitle: 'Register through our Microsoft Form. It takes about two minutes: confirm your company email, choose a date for each session you want to attend, and tell us which development environment you need.',
-  sessionChoice: 'When you register, choose a date for each session you want to attend.',
-  agendaNote: 'In the registration form, choose one date for each session, or None to skip it.',
+  subtitle: 'Register through our Microsoft Form. It takes about two minutes: confirm your company email, choose the dates and session times you want to attend, and tell us which development environment you need.',
   mark: '📝',
   badge: 'Registration is open',
   heading: 'Register with our Microsoft Form',
   body: 'The form opens right here on this page. Have these ready:',
   needs: [
     'Your company or organisation',
-    'Your company email address, entered twice to confirm it',
-    'The sessions you want to attend and a date for each',
+    'Your company email address',
+    'The dates and session times you want to attend',
     'Your development environment: your own machine or a cloud environment',
     'Your consent to how we use your registration details',
   ],
@@ -541,7 +537,7 @@ export const FAQ = [
   {
     q: 'How do I register?',
     a: REGISTRATION_VIA_FORM
-      ? 'Start the Microsoft Form in the Register section of this page, or open it in a new tab. Enter and confirm your company email, choose a date for each session you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
+      ? 'Start the Microsoft Form in the Register section of this page, or open it in a new tab. Enter and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
       : REGISTRATION_OPEN
         ? 'Provide and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
         : REGISTRATION_OPENS_SOON
