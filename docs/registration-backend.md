@@ -160,6 +160,7 @@ In state `4`, registrations are captured by this bootcamp's Microsoft Form, not 
 - **API:** submissions are refused with HTTP `403` and "Registration has moved to a new form. Refresh this page to register.", so a visitor with a cached page who submits the old form is told to reload.
 - **Embedding:** the Register section lists what registrants need and loads nothing from Microsoft Forms until the visitor chooses **Start registration**; **Open the form in a new tab** is always available. The deck's registration dialog shows the form when it opens. The Content Security Policy in `public/staticwebapp.config.json` allows frames only from `forms.office.com`, `forms.cloud.microsoft` and `forms.microsoft.com`.
 - **Consent:** the form's consent statement should use the current wording in `api/consent.json`. If that wording changes, update the form too.
+- **The form:** its link, questions, settings and design images are recorded in [registration-form/README.md](registration-form/README.md), so it can be rebuilt. Unlike the on-site form, it takes one date per session, cannot check that the two email addresses match and does not require a session, so check responses for these when processing them.
 
 ## Confirmation email
 

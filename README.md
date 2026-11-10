@@ -60,7 +60,7 @@ npm run build:swa
 
 ## Registration architecture
 
-In registration state `4`, registrations go to this bootcamp's Microsoft Form instead, and the API below refuses them. See [Registration through a Microsoft Form](docs/registration-backend.md#registration-through-a-microsoft-form-state-4).
+In registration state `4`, registrations go to this bootcamp's Microsoft Form instead, and the API below refuses them. See [Registration through a Microsoft Form](docs/registration-backend.md#registration-through-a-microsoft-form-state-4). The form's link, questions, settings and design are recorded in [docs/registration-form](docs/registration-form/README.md).
 
 Azure Static Web Apps hosts the website, deck and registration API on one origin. The registration API:
 

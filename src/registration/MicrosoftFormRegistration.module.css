@@ -179,3 +179,11 @@
   .frame { height: clamp(520px, calc(100vh - 120px), 900px); border-radius: 12px; }
   .dialogFrame { height: max(360px, calc(100vh - 200px)); }
 }
+/* Microsoft Forms renders inline only in frames at least 320px wide and shows a launcher in narrower ones.
+   On small phones the started card drops its chrome, and the deck dialog's frame spans the dialog's 14px padding (Slides.module.css). */
+@media (max-width: 420px) {
+  .cardStarted { padding: 0; border: 0; background: none; box-shadow: none; }
+  .cardStarted::before { display: none; }
+  .cardStarted .newTabRow { padding: 12px 0 2px; }
+  .dialogFrame { width: calc(100% + 28px); margin-inline: -14px; border: 0; border-radius: 0; }
+}
