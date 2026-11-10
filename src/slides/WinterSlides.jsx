@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { BottomBar, Editable, Slide, useSlides } from '@deckio/deck-engine'
 import RegistrationForm from '../registration/RegistrationForm.jsx'
+import { MicrosoftFormDialogBody } from '../registration/MicrosoftFormRegistration.jsx'
 import SpeakerAvatar from '../speakers/SpeakerAvatar.jsx'
 import PillarMark from '../agentic/PillarMark.jsx'
 import { ChristmasLights, Logos, Mascot } from '../winter/Decor.jsx'
@@ -9,7 +10,7 @@ import {
   BOOTCAMP, DATES_NOTE, INVITATION, MICROHACK_ACCESS, PERSONAS, PILLARS, PREP, PREREQUISITES, REGISTER_STEPS,
   REGISTRATION_NOTICE, SESSION_DATES, SESSIONS, SHOW_SESSION_OWNERS, TEAM, sessionOwner,
 } from '../content.js'
-import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from '../siteState.js'
+import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON, REGISTRATION_VIA_FORM } from '../siteState.js'
 import s from './Slides.module.css'
 
 const LIGHTS = 34
@@ -97,7 +98,7 @@ function RegistrationDialog({ onClose }) {
           </div>
           <button type="button" aria-label="Close registration" onClick={onClose}>×</button>
         </div>
-        <RegistrationForm />
+        {REGISTRATION_VIA_FORM ? <MicrosoftFormDialogBody /> : <RegistrationForm />}
       </div>
     </div>,
     document.body,
@@ -474,9 +475,11 @@ export function RegisterSlide({ index }) {
         id="register"
         eyebrow="Ready to join?"
         title={REGISTRATION_OPEN ? 'How to register' : REGISTRATION_NOTICE.title}
-        subtitle={REGISTRATION_OPEN
-          ? 'Registration is open. Confirm your company email; no sign-in is required.'
-          : REGISTRATION_OPENS_SOON ? 'When registration opens, it takes about two minutes:' : REGISTRATION_NOTICE.subtitle}
+        subtitle={REGISTRATION_VIA_FORM
+          ? 'Registration is open. It takes about two minutes in our Microsoft Form:'
+          : REGISTRATION_OPEN
+            ? 'Registration is open. Confirm your company email; no sign-in is required.'
+            : REGISTRATION_OPENS_SOON ? 'When registration opens, it takes about two minutes:' : REGISTRATION_NOTICE.subtitle}
       />
       <div className={s.registerSlideGrid}>
         {!closed && (

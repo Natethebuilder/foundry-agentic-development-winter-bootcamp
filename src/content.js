@@ -2,7 +2,7 @@
 // Sessions and owners follow the Foundry Bootcamp deck (v7, slides 8, 11 and 18–23). Session times
 // match the Agentic Data Engineering Winter Bootcamp. The six Friday dates are preliminary.
 import CONSENT from '../api/consent.json'
-import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from './siteState.js'
+import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON, REGISTRATION_VIA_FORM } from './siteState.js'
 
 export const BOOTCAMP = {
   name: 'Foundry Agentic Development Winter Bootcamp',
@@ -451,6 +451,29 @@ export const REGISTRATION = {
   startOver: 'Not you? Start a new registration',
 }
 
+// Shown in place of the on-site form while registration is 4 in api/site-state.json, when
+// registrations go to this bootcamp's Microsoft Form. Nothing loads from Microsoft Forms until the
+// visitor starts.
+export const REGISTRATION_FORM = {
+  subtitle: 'Register through our Microsoft Form. It takes about two minutes: confirm your company email, choose the dates and session times you want to attend, and tell us which development environment you need.',
+  mark: '📝',
+  badge: 'Registration is open',
+  heading: 'Register with our Microsoft Form',
+  body: 'The form opens right here on this page. Have these ready:',
+  needs: [
+    'Your company or organisation',
+    'Your company email address, entered twice to confirm it',
+    'The dates and session times you want to attend',
+    'Your development environment: your own machine or a cloud environment',
+    'Your consent to how we use your registration details',
+  ],
+  start: 'Start registration',
+  newTab: 'Open the form in a new tab',
+  provider: 'The form is provided by Microsoft Forms.',
+  providerBeforeStart: 'The form is provided by Microsoft Forms and loads only when you start.',
+  frameTitle: 'Foundry Agentic Development Winter Bootcamp registration form (Microsoft Forms)',
+}
+
 // Shown everywhere registration appears while registration is 2 in api/site-state.json.
 export const REGISTRATION_SOON = {
   mark: '📅',
@@ -512,10 +535,12 @@ export const FAQ = [
   },
   {
     q: 'How do I register?',
-    a: REGISTRATION_OPEN
-      ? 'Provide and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
-      : REGISTRATION_OPENS_SOON
-        ? 'Registration will open soon. When it does, you confirm your company email, choose the dates and session times you plan to attend, and select your development environment.'
-        : `Registration is closed. ${REGISTRATION_CLOSED.body}`,
+    a: REGISTRATION_VIA_FORM
+      ? 'Start the Microsoft Form in the Register section of this page, or open it in a new tab. Enter and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
+      : REGISTRATION_OPEN
+        ? 'Provide and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
+        : REGISTRATION_OPENS_SOON
+          ? 'Registration will open soon. When it does, you confirm your company email, choose the dates and session times you plan to attend, and select your development environment.'
+          : `Registration is closed. ${REGISTRATION_CLOSED.body}`,
   },
 ]

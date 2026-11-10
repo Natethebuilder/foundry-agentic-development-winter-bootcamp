@@ -5,12 +5,13 @@ import PillarMark from '../agentic/PillarMark.jsx'
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion.js'
 import SetupWizard from '../setup/SetupWizard.jsx'
 import RegistrationForm from '../registration/RegistrationForm.jsx'
+import MicrosoftFormRegistration from '../registration/MicrosoftFormRegistration.jsx'
 import SpeakerAvatar from '../speakers/SpeakerAvatar.jsx'
 import {
   BOOTCAMP, DATES_NOTE, FAQ, LINEUP, MICROHACK_ACCESS, PERSONAS, PILLARS, PREP, PREREQUISITES, REGISTRATION,
-  REGISTRATION_NOTICE, SESSIONS, SHOW_SESSION_OWNERS, sessionOwner,
+  REGISTRATION_FORM, REGISTRATION_NOTICE, SESSIONS, SHOW_SESSION_OWNERS, sessionOwner,
 } from '../content.js'
-import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from '../siteState.js'
+import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON, REGISTRATION_VIA_FORM } from '../siteState.js'
 import s from './Site.module.css'
 
 const NAV = [
@@ -509,9 +510,9 @@ export default function Site() {
           idx="05"
           eyebrow={REGISTRATION_OPEN ? REGISTRATION.eyebrow : REGISTRATION_NOTICE.eyebrow}
           title={REGISTRATION_OPEN ? REGISTRATION.title : REGISTRATION_NOTICE.title}
-          subtitle={REGISTRATION_OPEN ? REGISTRATION.subtitle : REGISTRATION_NOTICE.subtitle}
+          subtitle={REGISTRATION_VIA_FORM ? REGISTRATION_FORM.subtitle : REGISTRATION_OPEN ? REGISTRATION.subtitle : REGISTRATION_NOTICE.subtitle}
         >
-          {REGISTRATION_OPEN ? <RegistrationForm /> : (
+          {REGISTRATION_VIA_FORM ? <MicrosoftFormRegistration /> : REGISTRATION_OPEN ? <RegistrationForm /> : (
             <SoonPanel
               mark={REGISTRATION_NOTICE.mark}
               label={REGISTRATION_NOTICE.badge}

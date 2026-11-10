@@ -1,6 +1,6 @@
 # Foundry Agentic Development registration backend
 
-The public form uses the shared multi-event Power Automate flow and a dedicated private SharePoint List. GitHub OAuth and GitHub identity are not used for registration.
+The public form uses the shared multi-event Power Automate flow and a dedicated private SharePoint List. GitHub OAuth and GitHub identity are not used for registration. In registration state `4`, registrations go to this bootcamp's Microsoft Form instead; see [Registration through a Microsoft Form](#registration-through-a-microsoft-form-state-4).
 
 ## SharePoint target
 
@@ -144,11 +144,22 @@ The API allowlists exactly 36 combinations and rejects unknown dates, mismatched
 | `1` | Registration form is open | Validates and forwards submissions to the flow |
 | `2` | Every register entry point says registration will open soon | Returns HTTP `403` "Registration will open soon." without calling the flow |
 | `3` | Every register entry point says registration is closed, and the form is not shown | Returns HTTP `403` "Registration is closed." without calling the flow |
+| `4` | Every register entry point leads to the bootcamp's Microsoft Form at `registrationFormUrl`, embedded on the page; the on-site form is not shown. Without a valid form link, treated as closed (`3`) | Returns HTTP `403` "Registration has moved to a new form. Refresh this page to register." without calling the flow |
 | Any other value | Treated as closed (`3`) | Returns HTTP `403` "Registration is not open." without calling the flow |
 
-Only `1` accepts registrations, so a missing or mistyped value fails closed.
+Only `1` sends registrations to the API and the flow, so a missing or mistyped value fails closed.
 
 The same file sets `prerequisites` to `"soon"` (prerequisites will be shared soon) or `"microhack"` (MicroHack lab preparation). Commit the change and push to `main` to deploy it.
+
+## Registration through a Microsoft Form (state 4)
+
+In state `4`, registrations are captured by this bootcamp's Microsoft Form, not by the registration API. Responses stay with the form owner in Microsoft Forms and its Excel workbook. They do not reach the SharePoint List or the flow, and the List's status columns are not set for them.
+
+- **Switch to the form:** set `"registration": 4` and `"registrationFormUrl"` to the form's full link, `https://forms.office.com/Pages/ResponsePage.aspx?id=<form id>` (`forms.cloud.microsoft` and `forms.microsoft.com` also work; a short `/r/` link does not). Commit and push to `main`. If the link is not valid, `npm run build` fails, so the deploy stops and a broken form never goes live. `npm run dev` warns and shows registration as closed.
+- **Switch back:** set `"registration": 1` to restore the on-site form, the API and the flow. Other states ignore `registrationFormUrl`. Responses already collected in the form are not copied into the List.
+- **API:** submissions are refused with HTTP `403` and "Registration has moved to a new form. Refresh this page to register.", so a visitor with a cached page who submits the old form is told to reload.
+- **Embedding:** the Register section lists what registrants need and loads nothing from Microsoft Forms until the visitor chooses **Start registration**; **Open the form in a new tab** is always available. The deck's registration dialog shows the form when it opens. The Content Security Policy in `public/staticwebapp.config.json` allows frames only from `forms.office.com`, `forms.cloud.microsoft` and `forms.microsoft.com`.
+- **Consent:** the form's consent statement should use the current wording in `api/consent.json`. If that wording changes, update the form too.
 
 ## Confirmation email
 
@@ -205,7 +216,7 @@ Registration does not grant any access by itself. Closer to the date, registrant
 
 - The public site and registration API do not require GitHub sign-in.
 - The disabled GitHub OAuth route returns `404`.
-- Registration tests validate email confirmation, valid and invalid date-time-session selections, the retired placeholder values, all 36 valid selections, the registration states (only `1` accepts; `2`, `3` and unknown values are refused without calling the flow), backend settings, the 30-second flow timeout, and the canonical payload including `consentVersion`.
+- Registration tests validate email confirmation, valid and invalid date-time-session selections, the retired placeholder values, all 36 valid selections, the registration states (only `1` accepts; `2`, `3`, `4` and unknown values are refused without calling the flow, and `4` answers with the moved-form message), the Microsoft Forms link check for state `4` (accepted and rejected links, the embed link, the closed fallback and the build error), backend settings, the 30-second flow timeout, and the canonical payload including `consentVersion`.
 - Registration tests verify the normalized deterministic email key, caller override resistance, and preservation of the existing token-derived `RegistrationId`.
 - Registration tests verify the answers: `updated`; one identical `received` answer for `created`, `unchanged`, a missing outcome and an unreadable body; `409` only for the flow's `email-mismatch`; and `502` for every other failure. Another test checks that this document lists the current consent version with its exact wording.
 - Test submissions require explicit approval because they create or update SharePoint data.
