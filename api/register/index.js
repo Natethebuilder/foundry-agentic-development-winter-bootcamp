@@ -34,11 +34,13 @@ function response(status, body) {
 }
 
 // Only state 1 in api/site-state.json accepts registrations. State 2 (opening soon), state 3
-// (closed) and any unknown value refuse them without calling the flow.
+// (closed), state 4 (registration through the bootcamp's Microsoft Form) and any unknown value
+// refuse them without calling the flow. State 4 tells visitors with a cached page where to go.
 function registrationRefusal(state) {
   if (state === 1) return null
   if (state === 2) return 'Registration will open soon.'
   if (state === 3) return 'Registration is closed.'
+  if (state === 4) return 'Registration has moved to a new form. Refresh this page to register.'
   return 'Registration is not open.'
 }
 

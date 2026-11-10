@@ -21,20 +21,23 @@ The complete six-session agenda runs on 4, 11 and 18 December 2026 and 8, 15 and
 
 ```json
 {
-  "registration": 1,
+  "registration": 4,
+  "registrationFormUrl": "https://forms.office.com/Pages/ResponsePage.aspx?id=<form id>",
   "prerequisites": "soon"
 }
 ```
 
 | Setting | Value | Effect |
 | --- | --- | --- |
-| `registration` | `1` | Registration is open. |
+| `registration` | `1` | Registration is open on the site: the on-site form submits to the registration API and the Power Automate flow. |
 | `registration` | `2` | Every register entry point says registration will open soon, and the API refuses submissions. The form, API and flow stay in place, so switching back to `1` restores registration. |
 | `registration` | `3` | Registration is closed. Every register entry point says so, the form is not shown, and the API refuses submissions. |
+| `registration` | `4` | Registration is open through this bootcamp's Microsoft Form at `registrationFormUrl`. Every register entry point leads to the form, which is embedded on the page, and the API refuses submissions. See [Registration through a Microsoft Form](docs/registration-backend.md#registration-through-a-microsoft-form-state-4). |
+| `registrationFormUrl` | Microsoft Forms link | The form for state `4`: an `https` link on `forms.office.com`, `forms.cloud.microsoft` or `forms.microsoft.com` with the path `/Pages/ResponsePage.aspx` and an `id`. Other states ignore it. |
 | `prerequisites` | `"soon"` | The Get ready section says the information will be shared soon. |
 | `prerequisites` | `"microhack"` | The Get ready section and deck show the MicroHack lab preparation: Azure and Git basics, an email address for temporary Azure credentials, one lab repository per session, and GitHub only if needed. |
 
-Any other `registration` value is treated as closed, so a missing or mistyped value never opens registration. Commit the change and push to `main` to deploy it. Set `BOOTCAMP.datesConfirmed` in `src/content.js` to `true` once the dates are confirmed to remove the "preliminary" labels.
+Any other `registration` value is treated as closed, so a missing or mistyped value never opens registration. State `4` without a valid `registrationFormUrl` is treated as closed too, and `npm run build` fails, so a broken form link never deploys. Commit the change and push to `main` to deploy it. Set `BOOTCAMP.datesConfirmed` in `src/content.js` to `true` once the dates are confirmed to remove the "preliminary" labels.
 
 ## Develop
 
@@ -56,6 +59,8 @@ npm run build:swa
 - The palette is set in the `:root` variables at the top of `src/index.css`.
 
 ## Registration architecture
+
+In registration state `4`, registrations go to this bootcamp's Microsoft Form instead, and the API below refuses them. See [Registration through a Microsoft Form](docs/registration-backend.md#registration-through-a-microsoft-form-state-4). The form's link, questions, settings and design are recorded in [docs/registration-form](docs/registration-form/README.md).
 
 Azure Static Web Apps hosts the website, deck and registration API on one origin. The registration API:
 
