@@ -457,9 +457,7 @@ export default function Site() {
           title="Six dates. The same complete programme."
           subtitle={[
             'All six sessions run on every date.',
-            REGISTRATION_VIA_FORM
-              ? REGISTRATION_FORM.sessionChoice
-              : REGISTRATION_OPEN && 'When you register, pick as many sessions as you like, on as many dates as you like.',
+            REGISTRATION_OPEN && 'When you register, pick as many sessions as you like, on as many dates as you like.',
             REGISTRATION_OPENS_SOON && 'Once registration opens, pick as many sessions as you like, on as many dates as you like.',
             DATES_NOTE,
           ].filter(Boolean).join(' ')}
