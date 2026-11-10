@@ -31,14 +31,19 @@ function NewTabRow({ note }) {
 // The landing site's register section. Nothing loads from Microsoft Forms until the visitor starts.
 export default function MicrosoftFormRegistration() {
   const [started, setStarted] = useState(false)
+  const cardRef = useRef(null)
   const frameRef = useRef(null)
 
+  // Focusing the frame does not scroll the page, which can leave the top of the form behind the sticky nav.
+  // Scroll the card to the site's scroll-padding-top, just below the nav, then focus the form in place.
   useEffect(() => {
-    if (started) frameRef.current?.focus()
+    if (!started) return
+    cardRef.current?.scrollIntoView({ block: 'start' })
+    frameRef.current?.focus({ preventScroll: true })
   }, [started])
 
   return (
-    <div className={`${s.card} ${started ? s.cardStarted : ''}`}>
+    <div ref={cardRef} className={`${s.card} ${started ? s.cardStarted : ''}`}>
       {started ? <FormFrame frameRef={frameRef} className={s.frame} /> : (
         <div className={s.intro}>
           <span className={s.mark} aria-hidden="true">{REGISTRATION_FORM.mark}</span>
