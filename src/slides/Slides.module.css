@@ -524,7 +524,7 @@
 .thanksDuck { width: 110px; animation: bob 5s ease-in-out infinite; }
 .thanksCopilot { width: 150px; animation: bob 6s ease-in-out -2s infinite; }
 
-/* ── Registration and prerequisite states (api/site-state.json) ── */
+/* ── Registration and prerequisite states (site-state.json) ── */
 .heroSoon, .registerSoonBadge {
   display: inline-flex;
   align-items: center;

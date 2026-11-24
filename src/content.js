@@ -1,8 +1,7 @@
 // Shared public content for the landing site and the deck.
 // Sessions and owners follow the Foundry Bootcamp deck (v7, slides 8, 11 and 18–23). Session times
 // match the Agentic Data Engineering Winter Bootcamp. The six Friday dates are preliminary.
-import CONSENT from '../api/consent.json'
-import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON, REGISTRATION_VIA_FORM } from './siteState.js'
+import { PREREQUISITES_STATE, REGISTRATION_OPEN, REGISTRATION_OPENS_SOON } from './siteState.js'
 
 export const BOOTCAMP = {
   name: 'Foundry Agentic Development Winter Bootcamp',
@@ -195,8 +194,6 @@ export const SESSION_DATES = [
   { id: '2027-01-22', label: 'Friday, 22 January 2027', short: '22 Jan', day: '22', month: 'JAN' },
 ]
 
-export const registrationSlotId = (dateId, session) => `${dateId}|${session.time}|${session.id}`
-
 export const PERSONAS = [
   {
     id: 'developers', icon: '🧑‍💻', label: 'AI application developers',
@@ -365,7 +362,7 @@ export const AGENT_RUNS = [
   },
 ]
 
-// Prerequisites, by PREREQUISITES_STATE in api/site-state.json.
+// Prerequisites, by PREREQUISITES_STATE in site-state.json.
 export const PREREQUISITES = {
   soon: {
     title: 'Pre-flight checks',
@@ -422,40 +419,13 @@ export const REGISTER_STEPS = [
   'Receive a formal invitation with more details closer to the date',
 ]
 
-export const REGISTRATION = {
+// Shown wherever registration appears while registration is 4 in site-state.json, when
+// registrations go to this bootcamp's Microsoft Form. Nothing loads from Microsoft Forms until the
+// visitor starts. The form takes any combination of dates and sessions, so the schedule copy is
+// shared. docs/registration-form/README.md records its questions.
+export const REGISTRATION_FORM = {
   eyebrow: 'Registration',
   title: 'Join the Foundry Agentic Development Winter Bootcamp.',
-  subtitle: 'Confirm your company email, choose the dates and session times you want to attend, and tell us which development environment you need.',
-  slotLead: 'Pick as many sessions as you like, on as many dates as you like.',
-  slotHelp: 'Every date runs the same six sessions, so you can mix and match, for example Foundations on 4 December and Evaluate it on 11 December. Switch dates with the tabs below; sessions you have ticked on other dates stay selected.',
-  environments: [
-    {
-      id: 'local',
-      label: 'I will use my own machine',
-      desc: 'Choose this if you can install tools locally. Setup details follow with the prerequisites.',
-    },
-    {
-      id: 'cloud',
-      label: 'I need a cloud development environment',
-      desc: 'Places are limited. Selecting this records your request but does not guarantee a place.',
-    },
-  ],
-  // The wording and its version live in api/consent.json, so the API can record which version each
-  // registrant agreed to. When the wording changes, set the version to the date it goes live and add
-  // it to "Consent wording versions" in docs/registration-backend.md.
-  consent: CONSENT.wording,
-  // The API answers a new registration and an already registered email address the same way, so
-  // "received" must be true for both.
-  received: 'Thanks, we’ve received your registration. If this email address was already registered, your original registration is unchanged. To change it, contact the Microsoft contact who invited you. You will receive a formal invitation by email closer to the date of the bootcamp.',
-  updated: 'Thanks, your registration has been updated. You will receive a formal invitation by email closer to the date of the bootcamp.',
-  startOver: 'Not you? Start a new registration',
-}
-
-// Shown in place of the on-site form while registration is 4 in api/site-state.json, when
-// registrations go to this bootcamp's Microsoft Form. Nothing loads from Microsoft Forms until the
-// visitor starts. Like the on-site form, the form takes any combination of dates and sessions, so the
-// schedule copy is shared. docs/registration-form/README.md records its questions.
-export const REGISTRATION_FORM = {
   subtitle: 'Register through our Microsoft Form. It takes about two minutes: confirm your company email, choose the dates and session times you want to attend, and tell us which development environment you need.',
   mark: '📝',
   badge: 'Registration is open',
@@ -475,7 +445,7 @@ export const REGISTRATION_FORM = {
   frameTitle: 'Foundry Agentic Development Winter Bootcamp registration form (Microsoft Forms)',
 }
 
-// Shown everywhere registration appears while registration is 2 in api/site-state.json.
+// Shown everywhere registration appears while registration is 2 in site-state.json.
 export const REGISTRATION_SOON = {
   mark: '📅',
   eyebrow: 'Registration',
@@ -487,7 +457,7 @@ export const REGISTRATION_SOON = {
   cta: 'Registration opens soon',
 }
 
-// Shown everywhere registration appears while registration is 3 in api/site-state.json, or any value
+// Shown everywhere registration appears while registration is 3 in site-state.json, or any value
 // that is not a known state.
 export const REGISTRATION_CLOSED = {
   mark: '🔒',
@@ -536,12 +506,10 @@ export const FAQ = [
   },
   {
     q: 'How do I register?',
-    a: REGISTRATION_VIA_FORM
+    a: REGISTRATION_OPEN
       ? 'Start the Microsoft Form in the Register section of this page, or open it in a new tab. Enter and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
-      : REGISTRATION_OPEN
-        ? 'Provide and confirm your company email, choose the dates and session times you plan to attend, and select your development environment. You will receive a formal invitation with more details closer to the date.'
-        : REGISTRATION_OPENS_SOON
-          ? 'Registration will open soon. When it does, you confirm your company email, choose the dates and session times you plan to attend, and select your development environment.'
-          : `Registration is closed. ${REGISTRATION_CLOSED.body}`,
+      : REGISTRATION_OPENS_SOON
+        ? 'Registration will open soon. When it does, you confirm your company email, choose the dates and session times you plan to attend, and select your development environment.'
+        : `Registration is closed. ${REGISTRATION_CLOSED.body}`,
   },
 ]

@@ -1,9 +1,10 @@
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { deckPlugin, tailwindPlugin } from '@deckio/deck-engine/vite'
-import { registrationFormBuildError } from './src/registration/microsoftForm.js'
+import { REGISTRATION_FORM_HOSTS, registrationFormBuildError } from './src/registration/microsoftForm.js'
 
 // Inter is self-hosted (see src/index.css), but DECKIO's global.css still @imports it from Google
 // Fonts, which would send every visitor's IP address and user agent to Google. Drop only that remote
@@ -44,7 +45,7 @@ function requireRegistrationFormUrl() {
       config = resolved
     },
     buildStart() {
-      const siteState = JSON.parse(readFileSync(join(config.root, 'api/site-state.json'), 'utf8'))
+      const siteState = JSON.parse(readFileSync(join(config.root, 'site-state.json'), 'utf8'))
       const problem = registrationFormBuildError(siteState)
       if (!problem) return
       if (config.command === 'build') this.error(problem)
@@ -53,8 +54,44 @@ function requireRegistrationFormUrl() {
   }
 }
 
+// GitHub Pages can't send response headers, so the built page carries its content security policy
+// and referrer policy as the first tags in <head>. The policy allows the page's own inline scripts by
+// hash and frames from Microsoft Forms only. A meta tag can't set frame-ancestors, X-Frame-Options,
+// X-Content-Type-Options or Permissions-Policy. The dev server has no policy, so hot reload works.
+function securityPolicy() {
+  return {
+    name: 'security-policy',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle(_, bundle) {
+      const page = bundle['index.html']
+      const html = String(page.source)
+      const inlineScripts = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)]
+        .map(([, code]) => `'sha256-${createHash('sha256').update(code).digest('base64')}'`)
+      const policy = [
+        "default-src 'self'",
+        ["script-src 'self'", ...inlineScripts].join(' '),
+        "connect-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "font-src 'self' data:",
+        "img-src 'self' data:",
+        `frame-src ${REGISTRATION_FORM_HOSTS.map((host) => `https://${host}`).join(' ')}`,
+        "base-uri 'self'",
+        "object-src 'none'",
+        "form-action 'self'",
+      ].join('; ')
+      page.source = html.replace(
+        /<head>/i,
+        `<head>\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />\n`
+          + '    <meta name="referrer" content="strict-origin-when-cross-origin" />',
+      )
+    },
+  }
+}
+
 export default defineConfig({
-  base: '/',
+  // GitHub Pages serves the site from /<repo>/; the deploy workflow sets BASE_PATH.
+  base: process.env.BASE_PATH || '/',
   css: {
     postcss: { plugins: [dropGoogleFontsImport] },
   },
@@ -66,6 +103,7 @@ export default defineConfig({
     tailwindPlugin(),
     forbidGoogleFonts(),
     requireRegistrationFormUrl(),
+    securityPolicy(),
   ],
   server: {
     fs: {
