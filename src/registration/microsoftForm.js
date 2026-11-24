@@ -1,4 +1,4 @@
-// Registration state 4 in api/site-state.json sends registrants to this bootcamp's Microsoft Form.
+// Registration state 4 in site-state.json sends registrants to this bootcamp's Microsoft Form.
 // Its "registrationFormUrl" must be a Microsoft Forms response page, for example
 // https://forms.office.com/Pages/ResponsePage.aspx?id=<form id>. The site, the deck, the build
 // (vite.config.js) and the tests all use these checks.
@@ -21,10 +21,10 @@ export function isRegistrationFormUrl(value) {
 }
 
 // The registration state the site shows. State 4 without a valid form link, and any value that is
-// not a known state, show as closed (3).
+// not a known state, show as closed (3). That includes 1, the retired on-site form.
 export function effectiveRegistrationState(siteState) {
   const state = siteState?.registration
-  if ([1, 2, 3].includes(state)) return state
+  if ([2, 3].includes(state)) return state
   return state === 4 && isRegistrationFormUrl(siteState.registrationFormUrl) ? 4 : 3
 }
 
@@ -38,7 +38,7 @@ export function registrationFormEmbedUrl(formUrl) {
 // Why `vite build` must stop for this site state, or '' when it can deploy.
 export function registrationFormBuildError(siteState) {
   if (siteState?.registration !== 4 || isRegistrationFormUrl(siteState.registrationFormUrl)) return ''
-  return 'api/site-state.json sets "registration": 4, but "registrationFormUrl" is not a Microsoft Forms link, '
+  return 'site-state.json sets "registration": 4, but "registrationFormUrl" is not a Microsoft Forms link, '
     + 'so the site would show registration as closed. Set it to the form\'s link, '
     + 'https://forms.office.com/Pages/ResponsePage.aspx?id=<form id> (forms.cloud.microsoft and forms.microsoft.com also work), '
     + 'or choose another registration state.'

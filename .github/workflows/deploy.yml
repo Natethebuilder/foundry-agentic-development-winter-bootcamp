@@ -1,4 +1,4 @@
-name: Deploy Foundry Agentic Development Winter Bootcamp
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -7,37 +7,45 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
+# Let a running deployment finish; only the newest queued one runs next.
 concurrency:
-  group: foundry-agentic-development-winter-bootcamp
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
-      - name: Test registration API
-        run: npm test
+      - id: pages
+        uses: actions/configure-pages@v6
 
-      - name: Deploy site and API
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Build
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v5
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_FOUNDRY_AGENTIC_DEVELOPMENT }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: upload
-          app_location: /
-          api_location: api
-          output_location: dist
-          app_build_command: npm run build:swa
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

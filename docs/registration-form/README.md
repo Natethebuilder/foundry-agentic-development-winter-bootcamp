@@ -1,9 +1,9 @@
 # Registration form
 
-This bootcamp's Microsoft Form takes registrations in registration state `4`. The site embeds it from `registrationFormUrl` in `api/site-state.json` (see [Registration through a Microsoft Form](../registration-backend.md#registration-through-a-microsoft-form-state-4)). This page records the form so it can be rebuilt. If the schedule or the consent wording changes, update the form too.
+This bootcamp's Microsoft Form takes registrations in registration state `4`. The site embeds it from `registrationFormUrl` in `site-state.json` (see [Site states](../../README.md#site-states)). This page records the form so it can be rebuilt. If the schedule or the consent wording changes, update the form too.
 
 - **Link:** <https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbRxdEa3AwZX5OnfloSBL3H3tURUEzRjMwRFk0QlpOWUpDN0Q0Nzc1WVdYUi4u>
-- **Responses:** stay with the form owner in Microsoft Forms and its Excel workbook. They do not reach the SharePoint List or the registration flow.
+- **Responses:** stay with the form owner in Microsoft Forms and its Excel workbook.
 
 ## Design
 
@@ -45,12 +45,11 @@ Questions 1 to 4, 11 and 12 are required, and the text and email answers are sin
 - Save and edit responses: off.
 - Thank-you message: "Thank you for registering! You will receive a formal invitation with more details closer to the date of the bootcamp. To change your registration, contact the Microsoft contact who invited you."
 
-## Differences from the on-site form
+## Processing responses
 
-- The form also asks for the participant's full name, so its consent wording adds "my name". Otherwise it matches the current wording in `api/consent.json` (version `2026-10-29`), which the on-site form uses. If that wording changes, update the form too.
 - Forms cannot check that the two email addresses match. Compare them when processing responses.
 - Forms does not require at least one session. Follow up on responses with no dates ticked.
 
 ## Embedding
 
-The site adds `embed=true` to the link. Forms renders the form inline only in frames at least 320px wide and about 320px tall, and shows a "Fill in the form" launcher in smaller ones. On screens 420px wide or less, the site's frames drop their padding, so the form renders inline on phones from 360px wide (`src/registration/MicrosoftFormRegistration.module.css`).
+The site adds `embed=true` to the link. Forms renders the form inline only in frames at least 320px wide and about 320px tall, and shows a "Fill in the form" launcher in smaller ones. On screens 420px wide or less, the site's frames drop their padding, so the form renders inline on phones from 360px wide (`src/registration/MicrosoftFormRegistration.module.css`). The site's content security policy, added at build by `vite.config.js`, allows frames only from `forms.office.com`, `forms.cloud.microsoft` and `forms.microsoft.com`.
