@@ -61,6 +61,21 @@ npm run build
 
 Registrations go to this bootcamp's Microsoft Form (registration state `4`). The website's Register section lists what registrants need and loads nothing from Microsoft Forms until the visitor chooses **Start registration**; **Open the form in a new tab** is always available. The deck's registration dialog loads the form when it opens. Responses stay with the form owner in Microsoft Forms and its Excel workbook. The form's link, questions, settings and design are recorded in [docs/registration-form](docs/registration-form/README.md).
 
+## Privacy
+
+- **Footer links:** the website's footer and the footer bar of every deck slide link, in this order, to [Your Privacy Choices](https://go.microsoft.com/fwlink/?linkid=2214802), with the California Consumer Privacy Act (CCPA) opt-out icon to its left, [Consumer Health Privacy](https://go.microsoft.com/fwlink/?linkid=2259814) and [Privacy](https://go.microsoft.com/fwlink/?LinkId=521839), the Microsoft Privacy Statement. On phones, each slide shows them after its content. The links are in `src/privacy/LegalLinks.jsx`, and the icon, unmodified, is `public/privacy-choices.svg`.
+- **Registration notice:** wherever the Microsoft Form is embedded or started (the Register section, before and after **Start registration**, and the deck's registration dialog), the site says why it collects the details, to register you for the bootcamp and send your invitation, and links to the Privacy Statement.
+- **No cookies or tracking:** the site sets no cookies and loads no analytics, advertising, social media or other third-party scripts, so it has no cookie banner. Fonts and images are served from the site itself. Microsoft Forms loads only when a visitor starts registration or opens the deck's registration dialog.
+- **Browser storage:** the site keeps three keys, all in `sessionStorage`, which the browser clears when the tab closes. Earlier versions kept `deck-navbar-dismissed` and the checklist ticks in `localStorage`; the site removes those copies when it loads (`src/privacy/storage.js`).
+
+  | Key | Type | Purpose | Set | Lifetime |
+  | --- | --- | --- | --- | --- |
+  | `slide:foundry-agentic-development-winter-bootcamp` | `sessionStorage` | The deck's current slide, so a reload returns to it (set by DECKIO) | When the deck opens and on every slide change | Until the tab closes |
+  | `deck-navbar-dismissed` | `sessionStorage` | Keeps the deck's slide navigation hidden once the visitor closes it | When the visitor selects **×** on the slide navigation | Until the tab closes |
+  | `foundry-agentic-development-winter-bootcamp:prep` | `sessionStorage` | The ticks in the Get ready checklist, shown in prerequisites state `microhack` | When the visitor ticks or clears a box | Until the tab closes |
+
+- **Retention:** all registration responses are deleted 30 days after the final session. See [Data retention and deletion](docs/registration-form/README.md#data-retention-and-deletion).
+
 ## Deploy
 
 Pushing to `main` builds the site and deploys it to GitHub Pages through `.github/workflows/deploy.yml`, with the repository's Pages path as the base path. The site uses hash routes (`#/` and `#/deck`), so it needs no server rewrites.

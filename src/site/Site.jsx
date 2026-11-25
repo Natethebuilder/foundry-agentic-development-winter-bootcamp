@@ -5,6 +5,7 @@ import PillarMark from '../agentic/PillarMark.jsx'
 import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion.js'
 import SetupWizard from '../setup/SetupWizard.jsx'
 import MicrosoftFormRegistration from '../registration/MicrosoftFormRegistration.jsx'
+import LegalLinks from '../privacy/LegalLinks.jsx'
 import SpeakerAvatar from '../speakers/SpeakerAvatar.jsx'
 import {
   BOOTCAMP, DATES_NOTE, FAQ, LINEUP, MICROHACK_ACCESS, PERSONAS, PILLARS, PREP, PREREQUISITES,
@@ -281,13 +282,16 @@ function ProgrammeReveal() {
   )
 }
 
+// Ticks last for the browser session only, and are saved only once the visitor ticks a box.
 function PrepChecklist() {
   const [done, setDone] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(PREP_KEY)) || {} } catch { return {} }
+    try { return JSON.parse(sessionStorage.getItem(PREP_KEY)) || {} } catch { return {} }
   })
-  useEffect(() => {
-    try { localStorage.setItem(PREP_KEY, JSON.stringify(done)) } catch { /* ignore */ }
-  }, [done])
+  const toggle = (id, checked) => {
+    const next = { ...done, [id]: checked }
+    setDone(next)
+    try { sessionStorage.setItem(PREP_KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
+  }
 
   const count = PREP.filter((p) => done[p.id]).length
   const pct = Math.round((count / PREP.length) * 100)
@@ -311,7 +315,7 @@ function PrepChecklist() {
               <input
                 type="checkbox"
                 checked={Boolean(done[p.id])}
-                onChange={(e) => setDone((d) => ({ ...d, [p.id]: e.target.checked }))}
+                onChange={(e) => toggle(p.id, e.target.checked)}
               />
               <span className={s.checkBox} aria-hidden="true">{done[p.id] ? '✓' : ''}</span>
               <span className={s.checkIcon} aria-hidden="true">{p.icon}</span>
@@ -542,6 +546,7 @@ export default function Site() {
             Educational workshop series delivered by Microsoft. Not a consulting engagement. Use sample or
             non-sensitive data, code and repositories only. Workshop outputs are learning artifacts.
           </p>
+          <LegalLinks />
           <p className={s.footerSmall}>Built with DECKIO</p>
         </footer>
       </main>
