@@ -436,8 +436,10 @@ export const REGISTRATION_FORM = {
     'Your company email address',
     'The dates and session times you want to attend',
     'Your development environment: your own machine or a cloud environment',
-    'Your consent to how we use your registration details',
   ],
+  // Shown wherever the form is embedded or started, with a link to the Microsoft Privacy Statement.
+  privacyNotice: 'We collect your details to register you for the bootcamp and send your invitation.',
+  privacyLink: 'Privacy',
   start: 'Start registration',
   newTab: 'Open the form in a new tab',
   provider: 'The form is provided by Microsoft Forms.',

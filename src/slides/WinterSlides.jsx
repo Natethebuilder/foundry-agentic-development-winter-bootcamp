@@ -5,6 +5,7 @@ import { MicrosoftFormDialogBody } from '../registration/MicrosoftFormRegistrati
 import SpeakerAvatar from '../speakers/SpeakerAvatar.jsx'
 import PillarMark from '../agentic/PillarMark.jsx'
 import { ChristmasLights, Logos, Mascot } from '../winter/Decor.jsx'
+import LegalLinks from '../privacy/LegalLinks.jsx'
 import {
   BOOTCAMP, DATES_NOTE, INVITATION, MICROHACK_ACCESS, PERSONAS, PILLARS, PREP, PREREQUISITES, REGISTER_STEPS,
   REGISTRATION_NOTICE, SESSION_DATES, SESSIONS, SHOW_SESSION_OWNERS, TEAM, sessionOwner,
@@ -30,13 +31,28 @@ function SlideLights({ index }) {
   )
 }
 
+// Every slide's footer bar: the bootcamp name, then the privacy links. On phones only the links show,
+// after the slide's content (src/index.css).
+function SlideFooter({ id }) {
+  return (
+    <BottomBar
+      text={(
+        <>
+          <Editable as="span" id={`${id}.footer`} className="slide-footer-name">{BOOTCAMP.footer}</Editable>
+          <LegalLinks className="slide-legal" />
+        </>
+      )}
+    />
+  )
+}
+
 function Frame({ index, id, children, orbs = ['orbIce', 'orbPine'] }) {
   return (
     <Slide index={index} className={s.slide}>
       <SlideLights index={index} />
       {orbs.map((o) => <div key={o} className={`orb ${s[o]}`} />)}
       <div className={`${s.body} content-frame content-gutter`}>{children}</div>
-      <BottomBar text={<Editable as="span" id={`${id}.footer`}>{BOOTCAMP.footer}</Editable>} />
+      <SlideFooter id={id} />
     </Slide>
   )
 }
@@ -150,7 +166,7 @@ export function WinterTitleSlide({ index }) {
         <Mascot className={s.heroMascot} />
       </div>
       <Logos className={s.heroLogos} size="md" />
-      <BottomBar text={<Editable as="span" id="title.footer">{BOOTCAMP.footer}</Editable>} />
+      <SlideFooter id="title" />
     </Slide>
   )
 }
@@ -571,7 +587,7 @@ export function ThankYouSlide({ index }) {
         </div>
         <Logos size="sm" />
       </div>
-      <BottomBar text={<Editable as="span" id="thankYou.footer">{BOOTCAMP.footer}</Editable>} />
+      <SlideFooter id="thankYou" />
     </Slide>
   )
 }

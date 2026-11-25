@@ -207,6 +207,45 @@ html[data-export-mode="capture"] .slide .bulb-new { animation: none !important; 
   background: color-mix(in srgb, var(--foreground) 22%, transparent);
 }
 
+/* ── Privacy links: the website footer and every deck slide ──────────── */
+/* One style for all three links, in their exact text: never uppercased, never smaller than the others. */
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 22px;
+}
+.legal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.legal-link:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
+.legal-link:focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; border-radius: 4px; }
+.legal-link img { display: block; width: auto; height: 16px; }
+
+/* The deck engine's slide footer bar: the bootcamp name gives way first, so the links always fit. */
+.slide > [class^="_bar_"] > span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.slide-footer-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slide-legal { flex: none; }
+.slide-legal .legal-link { font-size: 12px; }
+
 /* ── Deck-only chrome ─────────────────────────────────────────────────── */
 button[title="Back to home"] { top: 36px !important; }
 
@@ -328,7 +367,21 @@ html[data-export-mode="capture"] .deck-navbar { display: none; }
   .deck-home-link { padding: 6px 12px; font-size: 12px; }
   .deck-navbar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   .deck-navbar-btn { padding: 0 10px; }
-  .slide > [class^="_bar_"], .slide-overflow-warn { display: none; }
+  .slide-overflow-warn { display: none; }
+  /* The footer bar becomes the slide's last row, after the content, with only the privacy links. */
+  .slide > [class^="_bar_"] {
+    position: static;
+    height: auto;
+    margin-top: 28px;
+    padding: 0 var(--content-gutter);
+    border-top: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+  .slide > [class^="_bar_"] > span { justify-content: center; }
+  .slide-footer-name { display: none; }
+  .slide-legal { flex: 0 1 auto; min-width: 0; }
+  .slide-legal .legal-link { font-size: 13px; }
 }
 
 @media (max-width: 380px) {

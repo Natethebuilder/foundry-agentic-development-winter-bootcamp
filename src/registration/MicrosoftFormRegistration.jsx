@@ -1,9 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { REGISTRATION_FORM } from '../content.js'
+import { PRIVACY_STATEMENT_URL } from '../privacy/LegalLinks.jsx'
 import { REGISTRATION_FORM_EMBED_URL, REGISTRATION_FORM_URL } from '../siteState.js'
 import s from './MicrosoftFormRegistration.module.css'
 
 // Registration state 4: registrations go to this bootcamp's Microsoft Form, embedded on the page.
+
+// Why the form collects personal data, with the Privacy Statement, wherever the form is embedded or
+// started. The link opens a new tab, so an answer in progress is not lost.
+function PrivacyNotice({ className }) {
+  return (
+    <p className={`${s.privacyNotice} ${className}`}>
+      {REGISTRATION_FORM.privacyNotice}{' '}
+      <a href={PRIVACY_STATEMENT_URL} target="_blank" rel="noopener noreferrer">
+        {REGISTRATION_FORM.privacyLink}<span aria-hidden="true"> ↗</span>
+      </a>
+    </p>
+  )
+}
 
 function FormFrame({ frameRef, className }) {
   return (
@@ -44,7 +58,12 @@ export default function MicrosoftFormRegistration() {
 
   return (
     <div ref={cardRef} className={`${s.card} ${started ? s.cardStarted : ''}`}>
-      {started ? <FormFrame frameRef={frameRef} className={s.frame} /> : (
+      {started ? (
+        <>
+          <PrivacyNotice className={s.frameNotice} />
+          <FormFrame frameRef={frameRef} className={s.frame} />
+        </>
+      ) : (
         <div className={s.intro}>
           <span className={s.mark} aria-hidden="true">{REGISTRATION_FORM.mark}</span>
           <div>
@@ -55,6 +74,7 @@ export default function MicrosoftFormRegistration() {
           <ul className={s.needs}>
             {REGISTRATION_FORM.needs.map((need) => <li key={need}>{need}</li>)}
           </ul>
+          <PrivacyNotice className={s.introNotice} />
           <button type="button" className={s.start} onClick={() => setStarted(true)}>
             {REGISTRATION_FORM.start} <span aria-hidden="true">→</span>
           </button>
@@ -69,6 +89,7 @@ export default function MicrosoftFormRegistration() {
 export function MicrosoftFormDialogBody() {
   return (
     <div className={s.dialogBody}>
+      <PrivacyNotice className={s.frameNotice} />
       <FormFrame className={`${s.frame} ${s.dialogFrame}`} />
       <NewTabRow note={REGISTRATION_FORM.provider} />
     </div>

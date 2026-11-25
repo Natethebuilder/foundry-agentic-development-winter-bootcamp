@@ -120,7 +120,7 @@
 }
 .start:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(139, 108, 255, 0.55); }
 
-/* The form scrolls inside the frame, so the frame stays about one screen tall. */
+/* The form scrolls inside the frame, so the frame stays about one screen tall, with the privacy notice above it. */
 .frame {
   display: block;
   width: 100%;
@@ -129,7 +129,25 @@
   border-radius: 14px;
   background: color-mix(in srgb, var(--night) 80%, var(--card));
 }
-.dialogFrame { height: max(420px, calc(100vh - 250px)); }
+.dialogFrame { height: max(420px, calc(100vh - 290px)); }
+
+/* Why the form collects personal data, and the Privacy Statement: above the start button and above the form. */
+.privacyNotice {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.privacyNotice a {
+  color: var(--frost);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--ice) 60%, transparent);
+  text-underline-offset: 3px;
+}
+.privacyNotice a:hover { color: var(--ice); text-decoration-color: currentColor; }
+.intro .introNotice { grid-column: 1 / -1; margin-top: 0; font-size: 14px; }
+.frameNotice { margin: 0 4px 12px; }
 
 .newTabRow {
   display: flex;
@@ -160,7 +178,7 @@
 .newTab:hover { border-color: var(--ice); transform: translateY(-1px); }
 .newTabRow small { color: var(--muted-foreground); font-size: 13px; line-height: 1.45; }
 
-.start:focus-visible, .newTab:focus-visible, .frame:focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; }
+.start:focus-visible, .newTab:focus-visible, .frame:focus-visible, .privacyNotice a:focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; }
 
 @keyframes livePulse { 50% { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) {
@@ -176,8 +194,8 @@
   .intro h3 { font-size: 20px; }
   .needs { grid-template-columns: 1fr; }
   .start { justify-self: stretch; justify-content: center; }
-  .frame { height: clamp(520px, calc(100vh - 120px), 900px); border-radius: 12px; }
-  .dialogFrame { height: max(360px, calc(100vh - 200px)); }
+  .frame { height: clamp(520px, calc(100vh - 190px), 900px); border-radius: 12px; }
+  .dialogFrame { height: max(360px, calc(100vh - 240px)); }
 }
 /* Microsoft Forms renders inline only in frames at least 320px wide and shows a launcher in narrower ones.
    On small phones the started card drops its chrome, and the deck dialog's frame spans the dialog's 14px padding (Slides.module.css). */
